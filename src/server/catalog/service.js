@@ -22,6 +22,9 @@ export async function getProducts(params = {}) {
     brandId: brand?.id ?? null,
     status: 'ACTIVE',
     search: params.search,
+    minPrice: params.minPrice,
+    maxPrice: params.maxPrice,
+    inStock: Boolean(params.inStock),
   };
   const [products, total] = await Promise.all([
     listProducts({ ...filters, limit, offset: (page - 1) * limit, sort: params.sort, direction: params.direction }),
