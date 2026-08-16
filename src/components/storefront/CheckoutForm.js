@@ -17,25 +17,46 @@ export default function CheckoutForm({ addresses, cart }) {
   }
 
   async function placeOrder() {
+    if (status === 'loading') return;
     setStatus('loading');
     setMessage('');
     try {
       let addressId = selectedAddress;
       if (newAddress) {
         const addressResponse = await fetch('/api/addresses', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form),
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(form),
         });
         const addressPayload = await addressResponse.json();
         if (!addressResponse.ok) throw new Error(addressPayload?.error?.message || 'ثبت آدرس انجام نشد.');
         addressId = addressPayload.data.address.id;
       }
       if (!addressId) throw new Error('لطفاً یک آدرس انتخاب کنید.');
-      const response = await fetch('/api/checkout', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ addressId }),
+
+      const checkoutResponse = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ addressId }),
       });
-      const payload = await response.json();
-      if (!response.ok) throw new Error(payload?.error?.message || 'ثبت سفارش انجام نشد.');
-      window.location.href = `/orders/${encodeURIComponent(payload.data.order.id)}`;
+      const checkoutPayload = await checkoutResponse.json();
+      if (!checkoutResponse.ok) throw new Error(checkoutPayload?.error?.message || 'ثبت سفارش انجام نشد.');
+
+      const orderId = checkoutPayload?.data?.order?.id;
+      if (!orderId) throw new Error('شناسه سفارش از سرور دریافت نشد.');
+
+      setMessage('در حال انتقال به درگاه پرداخت...');
+      const paymentResponse = await fetch('/api/payments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId }),
+      });
+      const paymentPayload = await paymentResponse.json();
+      if (!paymentResponse.ok) throw new Error(paymentPayload?.error?.message || 'شروع پرداخت انجام نشد.');
+
+      const redirectUrl = paymentPayload?.data?.redirectUrl;
+      if (!redirectUrl) throw new Error('آدرس درگاه پرداخت از سرور دریافت نشد.');
+      window.location.assign(redirectUrl);
     } catch (error) {
       setStatus('error');
       setMessage(error.message || 'خطایی رخ داد.');
@@ -51,11 +72,11 @@ export default function CheckoutForm({ addresses, cart }) {
           {newAddress && <div className="mt-4 grid gap-3 sm:grid-cols-2">{[['title','عنوان آدرس'],['recipientName','نام گیرنده'],['phone','شماره موبایل'],['province','استان'],['city','شهر'],['postalCode','کد پستی']].map(([name, label]) => <input key={name} name={name} value={form[name]} onChange={updateField} placeholder={label} className="h-11 rounded-xl border border-[var(--border)] px-3 text-sm outline-none focus:border-[var(--brand)]" />)}<textarea name="addressLine" value={form.addressLine} onChange={updateField} placeholder="نشانی کامل" rows={3} className="rounded-xl border border-[var(--border)] px-3 py-3 text-sm outline-none focus:border-[var(--brand)] sm:col-span-2" /></div>}
         </div>
 
-        <div className="rounded-2xl border border-[var(--border)] bg-white p-5"><h2 className="text-base font-black">روش پرداخت</h2><div className="mt-4 rounded-xl border border-[var(--brand)] bg-red-50/40 p-4"><p className="text-sm font-bold">پرداخت آنلاین</p><p className="mt-1 text-xs text-slate-500">در مرحله بعد به درگاه پرداخت امن منتقل می‌شوید.</p></div></div>
+        <div className="rounded-2xl border border-[var(--border)] bg-white p-5"><h2 className="text-base font-black">روش پرداخت</h2><div className="mt-4 rounded-xl border border-[var(--brand)] bg-red-50/40 p-4"><p className="text-sm font-bold">پرداخت آنلاین</p><p className="mt-1 text-xs text-slate-500">پس از ثبت سفارش به درگاه پرداخت امن منتقل می‌شوید.</p></div></div>
         {status === 'error' && <div role="alert" className="rounded-xl bg-red-50 p-4 text-sm font-semibold text-red-700">{message}</div>}
       </section>
 
-      <aside className="h-fit rounded-2xl border border-[var(--border)] bg-white p-5 lg:sticky lg:top-24"><h2 className="text-base font-black">خلاصه سفارش</h2><div className="mt-5 space-y-3 border-b border-[var(--border)] pb-5 text-sm">{(cart?.items || []).map((item) => <div key={item.id} className="flex justify-between gap-4"><span className="line-clamp-2 text-slate-500">{item.product_name} × {item.quantity}</span><span className="shrink-0 font-semibold">{new Intl.NumberFormat('fa-IR').format(Number(item.line_total))}</span></div>)}</div><div className="flex justify-between pt-5"><span className="text-sm text-slate-500">تعداد کالا</span><span className="text-sm font-bold">{new Intl.NumberFormat('fa-IR').format(itemCount)}</span></div><div className="mt-3 flex justify-between"><span className="font-bold">مبلغ قابل پرداخت</span><strong className="text-xl">{new Intl.NumberFormat('fa-IR').format(total)} <span className="text-xs font-medium text-slate-400">تومان</span></strong></div><button type="button" disabled={status === 'loading' || !cart?.items?.length} onClick={placeOrder} className="mt-6 h-12 w-full rounded-xl bg-[var(--brand)] text-sm font-bold text-white transition hover:bg-[var(--brand-strong)] disabled:cursor-not-allowed disabled:opacity-50">{status === 'loading' ? 'در حال ثبت سفارش...' : 'ثبت سفارش'}</button></aside>
+      <aside className="h-fit rounded-2xl border border-[var(--border)] bg-white p-5 lg:sticky lg:top-24"><h2 className="text-base font-black">خلاصه سفارش</h2><div className="mt-5 space-y-3 border-b border-[var(--border)] pb-5 text-sm">{(cart?.items || []).map((item) => <div key={item.id} className="flex justify-between gap-4"><span className="line-clamp-2 text-slate-500">{item.product_name} × {item.quantity}</span><span className="shrink-0 font-semibold">{new Intl.NumberFormat('fa-IR').format(Number(item.line_total))}</span></div>)}</div><div className="flex justify-between pt-5"><span className="text-sm text-slate-500">تعداد کالا</span><span className="text-sm font-bold">{new Intl.NumberFormat('fa-IR').format(itemCount)}</span></div><div className="mt-3 flex justify-between"><span className="font-bold">مبلغ قابل پرداخت</span><strong className="text-xl">{new Intl.NumberFormat('fa-IR').format(total)} <span className="text-xs font-medium text-slate-400">تومان</span></strong></div><button type="button" disabled={status === 'loading' || !cart?.items?.length} onClick={placeOrder} className="mt-6 h-12 w-full rounded-xl bg-[var(--brand)] text-sm font-bold text-white transition hover:bg-[var(--brand-strong)] disabled:cursor-not-allowed disabled:opacity-50">{status === 'loading' ? (message || 'در حال پردازش...') : 'ثبت سفارش و پرداخت'}</button></aside>
     </div>
   );
 }
