@@ -1,29 +1,5 @@
 import Link from 'next/link';
-
-const cards = [
-  { href: '/admin/reviews', title: 'نظرات', description: 'بررسی و مدیریت نظرات مشتریان', icon: '💬' },
-  { href: '/admin/products', title: 'محصولات', description: 'مدیریت محصولات و موجودی', icon: '📦' },
-  { href: '/admin/orders', title: 'سفارش‌ها', description: 'پیگیری و مدیریت سفارش‌ها', icon: '🧾' },
-  { href: '/admin/customers', title: 'مشتریان', description: 'مشاهده و مدیریت مشتریان', icon: '👥' },
-];
-
-export default function AdminDashboardPage() {
-  return (
-    <section>
-      <div className="mb-8">
-        <p className="text-sm font-semibold text-slate-500">پنل مدیریت</p>
-        <h1 className="mt-2 text-3xl font-black tracking-tight">مدیریت فروشگاه</h1>
-        <p className="mt-2 text-slate-600">مدیریت بخش‌های اصلی فروشگاه از یک فضای ساده و سریع.</p>
-      </div>
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {cards.map((card) => (
-          <Link key={card.href} href={card.href} className="group rounded-2xl border bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
-            <div className="text-2xl">{card.icon}</div>
-            <h2 className="mt-5 font-extrabold">{card.title}</h2>
-            <p className="mt-2 text-sm leading-6 text-slate-500">{card.description}</p>
-          </Link>
-        ))}
-      </div>
-    </section>
-  );
-}
+import { getAdminDashboard } from '../../server/admin/dashboard.js';
+const labels={PENDING:'در انتظار',CONFIRMED:'تایید شده',PROCESSING:'در حال پردازش',SHIPPED:'ارسال شده',DELIVERED:'تحویل شده',CANCELLED:'لغو شده',REFUNDED:'مرجوع شده'};
+const money=v=>Number(v||0).toLocaleString('fa-IR');
+export default async function AdminDashboardPage(){const d=await getAdminDashboard();return <section dir="rtl" className="space-y-6"><div><p className="text-sm font-semibold text-slate-500">پنل مدیریت</p><h1 className="mt-2 text-3xl font-black tracking-tight">نمای کلی فروشگاه</h1><p className="mt-2 text-slate-600">شاخص‌های واقعی فروش، سفارش، مشتری و موجودی.</p></div><div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"><div className="rounded-2xl border bg-white p-5 shadow-sm"><p className="text-sm text-slate-500">درآمد پرداخت‌شده</p><p className="mt-3 text-2xl font-black">{money(d.sales.paid_revenue)} تومان</p></div><div className="rounded-2xl border bg-white p-5 shadow-sm"><p className="text-sm text-slate-500">سفارش‌های پرداخت‌شده</p><p className="mt-3 text-2xl font-black">{money(d.sales.paid_orders)}</p></div><div className="rounded-2xl border bg-white p-5 shadow-sm"><p className="text-sm text-slate-500">مشتریان</p><p className="mt-3 text-2xl font-black">{money(d.customers.total)}</p><p className="mt-1 text-xs text-slate-400">{money(d.customers.new_30d)} مشتری جدید در ۳۰ روز</p></div><div className="rounded-2xl border bg-white p-5 shadow-sm"><p className="text-sm text-slate-500">موجودی قابل فروش</p><p className="mt-3 text-2xl font-black">{money(d.inventory.available_units)}</p><p className="mt-1 text-xs text-amber-600">{money(d.inventory.low_stock)} تنوع کم‌موجودی</p></div></div><div className="grid gap-6 lg:grid-cols-2"><div className="rounded-2xl border bg-white p-6 shadow-sm"><div className="flex items-center justify-between"><h2 className="text-xl font-black">آخرین سفارش‌ها</h2><Link href="/admin/orders" className="text-sm font-bold">همه سفارش‌ها</Link></div><div className="mt-4 divide-y">{d.recentOrders.map(o=><Link href={`/admin/orders/${o.id}`} key={o.id} className="flex items-center justify-between gap-4 py-4 hover:bg-slate-50"><div><p className="font-bold">{o.order_number}</p><p className="text-xs text-slate-400">{o.email}</p></div><div className="text-left"><p className="font-bold">{money(o.total_amount)} تومان</p><p className="text-xs text-slate-500">{labels[o.status]||o.status}</p></div></Link>)}{!d.recentOrders.length&&<p className="py-8 text-center text-sm text-slate-500">هنوز سفارشی ثبت نشده است.</p>}</div></div><div className="rounded-2xl border bg-white p-6 shadow-sm"><div className="flex items-center justify-between"><h2 className="text-xl font-black">پرفروش‌ترین محصولات</h2><Link href="/admin/products" className="text-sm font-bold">محصولات</Link></div><div className="mt-4 divide-y">{d.topProducts.map((p,i)=><div key={`${p.product_name}-${i}`} className="flex items-center justify-between py-4"><div><p className="font-bold">{p.product_name}</p><p className="text-xs text-slate-400">{money(p.units)} عدد</p></div><b>{money(p.revenue)} تومان</b></div>)}{!d.topProducts.length&&<p className="py-8 text-center text-sm text-slate-500">داده فروش کافی نیست.</p>}</div></div></div><div className="rounded-2xl border bg-white p-6 shadow-sm"><h2 className="text-xl font-black">توزیع وضعیت سفارش‌ها</h2><div className="mt-4 flex flex-wrap gap-3">{d.orders.map(o=><div key={o.status} className="rounded-xl bg-slate-50 px-4 py-3"><span className="text-sm text-slate-500">{labels[o.status]||o.status}</span><strong className="mr-2">{money(o.count)}</strong></div>)}</div></div></section>}
