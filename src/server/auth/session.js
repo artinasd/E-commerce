@@ -1,8 +1,13 @@
-import { randomBytes } from 'node:crypto';
+import { createHash, randomBytes } from 'node:crypto';
 import { withTransaction } from '../db/connection.js';
 import { AuthError, AuthorizationError } from './errors.js';
 
 const SESSION_TTL_SECONDS = 60 * 60 * 24 * 30;
+const SESSION_COOKIE = 'ecom_session';
+
+function hashSessionToken(token) {
+  return createHash('sha256').update(token).digest('hex');
+}
 
 export function createSessionToken() {
   return randomBytes(32).toString('base64url');
@@ -12,13 +17,14 @@ export async function createSession(connection, userId, token) {
   const expiresAt = new Date(Date.now() + SESSION_TTL_SECONDS * 1000);
   await connection.execute(
     `INSERT INTO sessions (id, user_id, expires_at) VALUES (?, ?, ?)`,
-    [token, userId, expiresAt],
+    [hashSessionToken(token), userId, expiresAt],
   );
-  return { token, expiresAt };
+  return { token, expiresAt, cookieName: SESSION_COOKIE };
 }
 
 export async function authenticateSession(token) {
   if (!token) throw new AuthError('Authentication required.');
+  const tokenHash = hashSessionToken(token);
 
   const [rows] = await withTransaction(async (connection) => connection.execute(
     `SELECT s.id AS session_id, s.user_id, s.expires_at,
@@ -30,7 +36,7 @@ export async function authenticateSession(token) {
         AND u.is_active = TRUE
         AND u.deleted_at IS NULL
       LIMIT 1`,
-    [token],
+    [tokenHash],
   ));
 
   const session = rows[0];
@@ -51,7 +57,7 @@ export async function authenticateSession(token) {
 export async function revokeSession(token) {
   if (!token) return;
   await withTransaction(async (connection) => {
-    await connection.execute('DELETE FROM sessions WHERE id = ?', [token]);
+    await connection.execute('DELETE FROM sessions WHERE id = ?', [hashSessionToken(token)]);
   });
 }
 
@@ -62,6 +68,7 @@ export function requireRole(user, allowedRoles) {
 
 export function sessionCookieOptions(expiresAt) {
   return {
+    name: SESSION_COOKIE,
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
