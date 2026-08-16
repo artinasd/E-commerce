@@ -19,6 +19,13 @@ export async function POST(request) {
     const result = await initiateOrderPayment({ userId: user.id, orderId, callbackUrl });
     return apiSuccess(result, 201);
   } catch (error) {
+    if (error?.statusCode === 503 && error?.message === 'Payment provider is not configured.') {
+      return apiSuccess({
+        paymentAvailable: false,
+        orderId: Number(new URL(request.url).searchParams.get('orderId') || 0),
+        redirectUrl: `/orders/${encodeURIComponent(new URL(request.url).searchParams.get('orderId') || '')}?payment=unavailable`,
+      });
+    }
     return apiErrorResponse(error, 'Unable to initiate payment.');
   }
 }
