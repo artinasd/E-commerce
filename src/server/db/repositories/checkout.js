@@ -3,6 +3,7 @@ import { withTransaction } from '../connection.js';
 import { calculateOrderPricing } from '../../pricing/service.js';
 import { findApplicablePromotion, recordPromotionRedemption } from '../../pricing/promotions.js';
 import { getShippingMethodById, calculateShippingAmount } from '../../pricing/shipping.js';
+import { reserveStock } from '../../inventory/service.js';
 
 const RESERVATION_MINUTES = 30;
 
@@ -77,12 +78,14 @@ export async function placeOrderFromCart(userId, addressId, { couponCode = null,
         [orderResult.insertId, item.variant_id, item.product_name, item.sku, item.unitPrice, item.quantity, item.discountAmount, item.lineTotal],
       );
 
-      const [reserved] = await connection.execute(
-        `UPDATE inventory SET reserved_quantity = reserved_quantity + ?
-          WHERE variant_id = ? AND quantity - reserved_quantity >= ?`,
-        [item.quantity, item.variant_id, item.quantity],
-      );
-      if (reserved.affectedRows !== 1) throw new Error(`Inventory changed for ${item.product_name}. Please try again.`);
+      try {
+        await reserveStock(connection, item.variant_id, Number(item.quantity));
+      } catch (error) {
+        if (error.code === 'INSUFFICIENT_STOCK') {
+          throw new Error(`Inventory changed for ${item.product_name}. Please try again.`);
+        }
+        throw error;
+      }
     }
 
     if (promotion) {
