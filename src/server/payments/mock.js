@@ -33,6 +33,7 @@ export async function completeMockPayment(paymentId, success) {
     if (!payment || Number(payment.user_id) !== Number(user.id)) throw new Error('Payment not found.');
     if (payment.status === 'SUCCESS') return { orderId: payment.order_id, orderNumber: payment.order_number, status: 'PAID', alreadyProcessed: true };
     if (payment.status !== 'PENDING') throw new Error('This payment can no longer be processed.');
+    if (payment.order_status !== 'PENDING' || payment.order_payment_status !== 'UNPAID') throw new Error('This order is no longer available for payment.');
     const [items] = await connection.execute(`SELECT variant_id,quantity FROM order_items WHERE order_id=?`, [payment.order_id]);
     if (!success) {
       await connection.execute(`UPDATE payments SET status='FAILED' WHERE id=?`, [paymentId]);
@@ -47,8 +48,8 @@ export async function completeMockPayment(paymentId, success) {
       throw new Error('The order reservation has expired.');
     }
     for (const item of items) await consumeReservedStock(connection, item.variant_id, Number(item.quantity));
-    await connection.execute(`UPDATE payments SET status='SUCCESS',paid_at=CURRENT_TIMESTAMP WHERE id=?`, [paymentId]);
-    await connection.execute(`UPDATE orders SET payment_status='PAID',status='CONFIRMED' WHERE id=? AND status='PENDING'`, [payment.order_id]);
+    await connection.execute(`UPDATE payments SET status='SUCCESS',paid_at=CURRENT_TIMESTAMP WHERE id=? AND status='PENDING'`, [paymentId]);
+    await connection.execute(`UPDATE orders SET payment_status='PAID',status='CONFIRMED' WHERE id=? AND status='PENDING' AND payment_status='UNPAID'`, [payment.order_id]);
     return { orderId: payment.order_id, orderNumber: payment.order_number, status: 'PAID' };
   });
 }
