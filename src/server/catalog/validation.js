@@ -1,4 +1,4 @@
-const SORT_FIELDS = new Set(['created_at', 'price', 'name', 'rating', 'sales_count']);
+const SORT_FIELDS = new Set(['created_at', 'price', 'name']);
 const SORT_DIRECTIONS = new Set(['asc', 'desc']);
 
 function positiveInt(value, fallback, max) {
@@ -22,8 +22,8 @@ export function parseProductQuery(searchParams) {
     search,
     categorySlug,
     brandSlug,
-    sort: SORT_FIELDS.has(requestedSort) ? requestedSort : undefined,
-    direction: SORT_DIRECTIONS.has(requestedDirection) ? requestedDirection : undefined,
+    sort: SORT_FIELDS.has(requestedSort) ? requestedSort : 'created_at',
+    direction: SORT_DIRECTIONS.has(requestedDirection) ? requestedDirection : 'desc',
   };
 }
 
