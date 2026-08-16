@@ -30,29 +30,43 @@ export async function initiateOrderPayment({ userId, orderId, callbackUrl }) {
     throw error;
   }
 
-  const provider = getPaymentProvider();
-  const result = await provider.createPayment({
-    orderId: order.id,
-    orderNumber: order.order_number,
-    amount: Number(order.total_amount),
-    callbackUrl,
-  });
-
-  if (!result?.redirectUrl || !result?.providerReference) {
-    throw new Error('Payment provider returned an incomplete payment response.');
-  }
-
   const payment = await createPayment({
     orderId: order.id,
     provider: providerName,
     amount: Number(order.total_amount),
-  });
-
-  await updatePaymentResult({
-    paymentId: payment.id,
     status: 'PENDING',
-    providerReference: result.providerReference,
   });
 
-  return { paymentId: payment.id, redirectUrl: result.redirectUrl };
+  if (!payment) throw new Error('Unable to create payment record.');
+
+  try {
+    const provider = getPaymentProvider();
+    const result = await provider.createPayment({
+      orderId: order.id,
+      orderNumber: order.order_number,
+      amount: Number(order.total_amount),
+      callbackUrl,
+      paymentId: payment.id,
+    });
+
+    if (!result?.redirectUrl || !result?.providerReference) {
+      await updatePaymentResult({ paymentId: payment.id, status: 'FAILED' });
+      throw new Error('Payment provider returned an incomplete payment response.');
+    }
+
+    await updatePaymentResult({
+      paymentId: payment.id,
+      status: 'PENDING',
+      providerReference: result.providerReference,
+    });
+
+    return { paymentId: payment.id, redirectUrl: result.redirectUrl };
+  } catch (error) {
+    try {
+      await updatePaymentResult({ paymentId: payment.id, status: 'FAILED' });
+    } catch {
+      // Preserve the original provider/database error; reconciliation can inspect the payment record.
+    }
+    throw error;
+  }
 }
