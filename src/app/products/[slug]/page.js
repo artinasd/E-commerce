@@ -1,112 +1,21 @@
 import Link from 'next/link';
 import AddToCart from '../../../components/storefront/AddToCart';
 import FavoriteButton from '../../../components/storefront/FavoriteButton';
+import ProductGallery from '../../../components/storefront/ProductGallery';
 
 async function getProduct(slug) {
   const base = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-  try {
-    const response = await fetch(`${base}/api/products/${encodeURIComponent(slug)}`, { next: { revalidate: 60 } });
-    if (!response.ok) return null;
-    return (await response.json()).data?.product ?? null;
-  } catch {
-    return null;
-  }
+  try { const response = await fetch(`${base}/api/products/${encodeURIComponent(slug)}`, { next: { revalidate: 60 } }); if (!response.ok) return null; return (await response.json()).data?.product ?? null; } catch { return null; }
 }
-
 async function getReviews(slug) {
   const base = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-  try {
-    const response = await fetch(`${base}/api/products/${encodeURIComponent(slug)}/reviews?limit=12`, { next: { revalidate: 60 } });
-    if (!response.ok) return { averageRating: 0, reviewCount: 0, reviews: [] };
-    return (await response.json()).data ?? { averageRating: 0, reviewCount: 0, reviews: [] };
-  } catch {
-    return { averageRating: 0, reviewCount: 0, reviews: [] };
-  }
+  try { const response = await fetch(`${base}/api/products/${encodeURIComponent(slug)}/reviews?limit=12`, { next: { revalidate: 60 } }); if (!response.ok) return { averageRating: 0, reviewCount: 0, reviews: [] }; return (await response.json()).data ?? { averageRating: 0, reviewCount: 0, reviews: [] }; } catch { return { averageRating: 0, reviewCount: 0, reviews: [] }; }
 }
-
 function formatPrice(value) { return new Intl.NumberFormat('fa-IR').format(Number(value || 0)); }
 function formatRating(value) { return Number(value || 0).toLocaleString('fa-IR', { maximumFractionDigits: 1 }); }
-function Stars({ value }) {
-  const rounded = Math.round(Number(value || 0));
-  return <span aria-label={`${formatRating(value)} از ۵`} className="tracking-wide text-amber-500">{'★'.repeat(rounded)}<span className="text-slate-200">{'★'.repeat(Math.max(5 - rounded, 0))}</span></span>;
-}
-
-export async function generateMetadata({ params }) {
-  const product = await getProduct((await params).slug);
-  return product ? { title: product.name, description: product.short_description || product.description || undefined } : { title: 'محصول پیدا نشد' };
-}
-
-export default async function ProductPage({ params }) {
-  const slug = (await params).slug;
-  const [product, reviewData] = await Promise.all([getProduct(slug), getReviews(slug)]);
-  if (!product) {
-    return <div className="mx-auto max-w-3xl px-4 py-24 text-center"><h1 className="text-2xl font-black">محصول پیدا نشد</h1><p className="mt-2 text-sm text-slate-500">این محصول وجود ندارد یا دیگر در دسترس نیست.</p><Link href="/products" className="mt-6 inline-flex rounded-xl bg-slate-950 px-5 py-3 text-sm font-bold text-white">بازگشت به محصولات</Link></div>;
-  }
-
-  const images = product.images || [];
-  const primary = images[0]?.url;
-  const variants = product.variants || [];
-  const cheapest = variants.filter((variant) => Number(variant.available_quantity) > 0).sort((a, b) => Number(a.price) - Number(b.price))[0] || variants[0];
-  const averageRating = Number(reviewData.averageRating || product.average_rating || 0);
-  const reviewCount = Number(reviewData.reviewCount || product.review_count || 0);
-
-  return (
-    <div className="mx-auto max-w-7xl px-4 py-7 sm:px-6 lg:px-8">
-      <nav className="mb-6 text-xs text-slate-400" aria-label="مسیر صفحه">
-        <Link href="/products" className="hover:text-[var(--brand)]">محصولات</Link><span className="mx-2">/</span>{product.category_name && <><span>{product.category_name}</span><span className="mx-2">/</span></>}{product.name}
-      </nav>
-
-      <div className="grid gap-8 lg:grid-cols-[1.05fr_.95fr]">
-        <section className="overflow-hidden rounded-3xl border border-[var(--border)] bg-white">
-          <div className="aspect-square bg-slate-50">
-            {primary ? <img src={primary} alt={images[0]?.alt_text || product.name} className="h-full w-full object-contain p-8 sm:p-14" /> : <div className="flex h-full items-center justify-center text-sm text-slate-400">بدون تصویر</div>}
-          </div>
-          {images.length > 1 && <div className="grid grid-cols-5 gap-2 border-t border-[var(--border)] p-3">{images.slice(0, 5).map((image) => <div key={image.id} className="aspect-square overflow-hidden rounded-xl bg-slate-50"><img src={image.url} alt={image.alt_text || product.name} className="h-full w-full object-contain" /></div>)}</div>}
-        </section>
-
-        <section className="self-start lg:sticky lg:top-24">
-          <div className="border-b border-[var(--border)] pb-6">
-            <div className="flex items-start justify-between gap-4">
-              <div className="min-w-0">
-                <p className="text-xs font-semibold text-slate-400">{product.brand_name || 'برند'}</p>
-                <h1 className="mt-2 text-2xl font-black leading-9 text-slate-950 sm:text-3xl">{product.name}</h1>
-              </div>
-              <FavoriteButton productId={product.id} className="shrink-0" />
-            </div>
-            {product.short_description && <p className="mt-3 text-sm leading-7 text-slate-500">{product.short_description}</p>}
-            <div className="mt-4 flex items-center gap-3 text-sm">
-              <Stars value={averageRating} />
-              <span className="font-bold text-slate-700">{formatRating(averageRating)}</span>
-              <a href="#reviews" className="text-slate-400 hover:text-[var(--brand)]">({reviewCount.toLocaleString('fa-IR')} دیدگاه)</a>
-            </div>
-          </div>
-
-          <div className="py-6">
-            <div className="flex items-end justify-between gap-4">
-              <div><p className="text-xs text-slate-400">قیمت از</p><p className="mt-1 text-2xl font-black">{formatPrice(cheapest?.price)} <span className="text-xs font-medium text-slate-400">تومان</span></p></div>
-              {product.status === 'ACTIVE' && <span className="rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700">موجود</span>}
-            </div>
-            <div className="mt-6"><AddToCart variants={variants} /></div>
-          </div>
-
-          {(product.description || product.category_name || product.brand_name) && <div className="border-t border-[var(--border)] pt-6"><h2 className="text-base font-black">درباره محصول</h2>{product.description && <p className="mt-3 whitespace-pre-line text-sm leading-8 text-slate-600">{product.description}</p>}<dl className="mt-5 grid grid-cols-2 gap-3 text-xs"><div className="rounded-xl bg-slate-50 p-3"><dt className="text-slate-400">دسته‌بندی</dt><dd className="mt-1 font-bold">{product.category_name || '—'}</dd></div><div className="rounded-xl bg-slate-50 p-3"><dt className="text-slate-400">برند</dt><dd className="mt-1 font-bold">{product.brand_name || '—'}</dd></div></dl></div>}
-        </section>
-      </div>
-
-      <section id="reviews" className="mt-12 border-t border-[var(--border)] pt-10">
-        <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
-          <div><p className="text-xs font-bold text-[var(--brand)]">نظر خریداران</p><h2 className="mt-1 text-2xl font-black">دیدگاه‌ها و امتیاز کاربران</h2></div>
-          <div className="flex items-center gap-3 rounded-2xl bg-slate-50 px-4 py-3"><Stars value={averageRating} /><span className="font-black">{formatRating(averageRating)}</span><span className="text-xs text-slate-400">از {reviewCount.toLocaleString('fa-IR')} دیدگاه</span></div>
-        </div>
-
-        {reviewData.reviews?.length ? (
-          <div className="mt-6 grid gap-4 md:grid-cols-2">
-            {reviewData.reviews.map((review) => <article key={review.id} className="rounded-2xl border border-[var(--border)] bg-white p-5"><div className="flex items-center justify-between gap-3"><div><p className="font-bold">{review.authorName}</p><p className="mt-1 text-[11px] text-emerald-600">خریدار تأییدشده</p></div><Stars value={review.rating} /></div>{review.title && <h3 className="mt-4 font-bold">{review.title}</h3>}{review.content && <p className="mt-2 whitespace-pre-line text-sm leading-7 text-slate-600">{review.content}</p>}</article>)}
-          </div>
-        ) : (
-          <div className="mt-6 rounded-2xl border border-dashed border-[var(--border)] px-6 py-12 text-center"><p className="font-bold text-slate-700">هنوز دیدگاهی برای این محصول ثبت نشده است.</p><p className="mt-2 text-sm text-slate-400">پس از خرید و تحویل سفارش، می‌توانید تجربه خود را ثبت کنید.</p></div>
-        )}
-      </section>
-    </div>
-  );
+function Stars({ value }) { const rounded=Math.round(Number(value||0)); return <span aria-label={`${formatRating(value)} از ۵`} className="tracking-wide text-amber-500">{'★'.repeat(rounded)}<span className="text-slate-200">{'★'.repeat(Math.max(5-rounded,0))}</span></span>; }
+export async function generateMetadata({ params }) { const product=await getProduct((await params).slug); return product?{title:product.name,description:product.short_description||product.description||undefined}:{title:'محصول پیدا نشد'}; }
+export default async function ProductPage({ params }) { const slug=(await params).slug; const [product,reviewData]=await Promise.all([getProduct(slug),getReviews(slug)]); if(!product)return <div className="mx-auto max-w-3xl px-4 py-24 text-center"><h1 className="text-2xl font-black">محصول پیدا نشد</h1><p className="mt-2 text-sm text-slate-500">این محصول وجود ندارد یا دیگر در دسترس نیست.</p><Link href="/products" className="mt-6 inline-flex rounded-xl bg-slate-950 px-5 py-3 text-sm font-bold text-white">بازگشت به محصولات</Link></div>;
+  const images=product.images||[]; const variants=product.variants||[]; const cheapest=variants.filter(v=>Number(v.available_quantity)>0).sort((a,b)=>Number(a.price)-Number(b.price))[0]||variants[0]; const averageRating=Number(reviewData.averageRating||product.average_rating||0); const reviewCount=Number(reviewData.reviewCount||product.review_count||0);
+  return <div className="mx-auto max-w-7xl px-4 py-7 sm:px-6 lg:px-8"><nav className="mb-6 text-xs text-slate-400" aria-label="مسیر صفحه"><Link href="/products" className="hover:text-[var(--brand)]">محصولات</Link><span className="mx-2">/</span>{product.category_name&&<><span>{product.category_name}</span><span className="mx-2">/</span></>}{product.name}</nav><div className="grid gap-8 lg:grid-cols-[1.05fr_.95fr]"><section className="overflow-hidden rounded-3xl border border-[var(--border)] bg-white"><ProductGallery productName={product.name} images={images}/></section><section className="self-start lg:sticky lg:top-24"><div className="border-b border-[var(--border)] pb-6"><div className="flex items-start justify-between gap-4"><div className="min-w-0"><p className="text-xs font-semibold text-slate-400">{product.brand_name||'برند'}</p><h1 className="mt-2 text-2xl font-black leading-9 text-slate-950 sm:text-3xl">{product.name}</h1></div><FavoriteButton productId={product.id} className="shrink-0"/></div>{product.short_description&&<p className="mt-3 text-sm leading-7 text-slate-500">{product.short_description}</p>}<div className="mt-4 flex items-center gap-3 text-sm"><Stars value={averageRating}/><span className="font-bold text-slate-700">{formatRating(averageRating)}</span><a href="#reviews" className="text-slate-400 hover:text-[var(--brand)]">({reviewCount.toLocaleString('fa-IR')} دیدگاه)</a></div></div><div className="py-6"><div className="flex items-end justify-between gap-4"><div><p className="text-xs text-slate-400">قیمت از</p><p className="mt-1 text-2xl font-black">{formatPrice(cheapest?.price)} <span className="text-xs font-medium text-slate-400">تومان</span></p></div>{Number(cheapest?.available_quantity)>0&&<span className="rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700">موجود</span>}</div><div className="mt-6"><AddToCart variants={variants}/></div></div>{(product.description||product.category_name||product.brand_name)&&<div className="border-t border-[var(--border)] pt-6"><h2 className="text-base font-black">درباره محصول</h2>{product.description&&<p className="mt-3 whitespace-pre-line text-sm leading-8 text-slate-600">{product.description}</p>}<dl className="mt-5 grid grid-cols-2 gap-3 text-xs"><div className="rounded-xl bg-slate-50 p-3"><dt className="text-slate-400">دسته‌بندی</dt><dd className="mt-1 font-bold">{product.category_name||'—'}</dd></div><div className="rounded-xl bg-slate-50 p-3"><dt className="text-slate-400">برند</dt><dd className="mt-1 font-bold">{product.brand_name||'—'}</dd></div></dl></div>}</section></div><section id="reviews" className="mt-12 border-t border-[var(--border)] pt-10"><div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between"><div><p className="text-xs font-bold text-[var(--brand)]">نظر خریداران</p><h2 className="mt-1 text-2xl font-black">دیدگاه‌ها و امتیاز کاربران</h2></div><div className="flex items-center gap-3 rounded-2xl bg-slate-50 px-4 py-3"><Stars value={averageRating}/><span className="font-black">{formatRating(averageRating)}</span><span className="text-xs text-slate-400">از {reviewCount.toLocaleString('fa-IR')} دیدگاه</span></div></div>{reviewData.reviews?.length?<div className="mt-6 grid gap-4 md:grid-cols-2">{reviewData.reviews.map(review=><article key={review.id} className="rounded-2xl border border-[var(--border)] bg-white p-5"><div className="flex items-center justify-between gap-3"><div><p className="font-bold">{review.authorName}</p><p className="mt-1 text-[11px] text-emerald-600">خریدار تأییدشده</p></div><Stars value={review.rating}/></div>{review.title&&<h3 className="mt-4 font-bold">{review.title}</h3>}{review.content&&<p className="mt-2 whitespace-pre-line text-sm leading-7 text-slate-600">{review.content}</p>}</article>)}</div>:<div className="mt-6 rounded-2xl border border-dashed border-[var(--border)] px-6 py-12 text-center"><p className="font-bold text-slate-700">هنوز دیدگاهی برای این محصول ثبت نشده است.</p><p className="mt-2 text-sm text-slate-400">پس از خرید و تحویل سفارش، می‌توانید تجربه خود را ثبت کنید.</p></div>}</section></div>;
 }
