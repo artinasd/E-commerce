@@ -1,0 +1,11 @@
+'use client';
+
+import { useState } from 'react';
+
+export default function AddressEditForm({ address, onSaved, onCancel }) {
+  const [form,setForm]=useState({recipientName:address.recipient_name||'',recipientPhone:address.recipient_phone||'',province:address.province||'',city:address.city||'',addressLine:address.address_line||'',postalCode:address.postal_code||'',plaque:address.plaque||'',unit:address.unit||'',isDefault:Boolean(address.is_default)});
+  const [busy,setBusy]=useState(false); const [error,setError]=useState('');
+  const set=(k,v)=>setForm(x=>({...x,[k]:v}));
+  async function submit(e){e.preventDefault();setBusy(true);setError('');try{const r=await fetch(`/api/account/addresses/${address.id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(form)});const d=await r.json();if(!r.ok)throw new Error(d.error||'ویرایش آدرس انجام نشد.');onSaved?.();}catch(e){setError(e.message||'ویرایش آدرس انجام نشد.')}finally{setBusy(false)}}
+  return <form dir="rtl" onSubmit={submit} className="rounded-2xl border bg-slate-50 p-4"><div className="grid gap-3 sm:grid-cols-2">{[['recipientName','نام گیرنده'],['recipientPhone','شماره تلفن'],['province','استان'],['city','شهر'],['postalCode','کد پستی'],['plaque','پلاک'],['unit','واحد']].map(([k,l])=><label key={k} className="text-xs font-bold">{l}<input value={form[k]} onChange={e=>set(k,e.target.value)} className="mt-1 w-full rounded-xl border bg-white px-3 py-2"/></label>)}<label className="text-xs font-bold sm:col-span-2">آدرس کامل<textarea required value={form.addressLine} onChange={e=>set('addressLine',e.target.value)} rows={3} className="mt-1 w-full rounded-xl border bg-white px-3 py-2"/></label></div><label className="mt-3 flex items-center gap-2 text-xs font-bold"><input type="checkbox" checked={form.isDefault} onChange={e=>set('isDefault',e.target.checked)}/> آدرس پیش‌فرض</label>{error&&<p className="mt-3 text-xs font-bold text-red-600">{error}</p>}<div className="mt-4 flex gap-2"><button disabled={busy} className="rounded-xl bg-slate-950 px-4 py-2 text-xs font-bold text-white">{busy?'در حال ذخیره...':'ذخیره تغییرات'}</button><button type="button" onClick={onCancel} className="rounded-xl border px-4 py-2 text-xs font-bold">انصراف</button></div></form>;
+}
