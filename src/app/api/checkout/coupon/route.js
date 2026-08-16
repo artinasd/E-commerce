@@ -1,7 +1,8 @@
 import { requireUser } from '../../../../lib/auth/session.js';
+import { withTransaction } from '../../../../server/db/connection.js';
 import { getOrCreateCart, listCartItems } from '../../../../server/db/repositories/cart.js';
 import { calculateOrderPricing } from '../../../../server/pricing/service.js';
-import { validatePromotion } from '../../../../server/pricing/promotions.js';
+import { findApplicablePromotion } from '../../../../server/pricing/promotions.js';
 import { apiErrorResponse, apiSuccess } from '../../../../server/api/response.js';
 
 export async function POST(request) {
@@ -21,14 +22,15 @@ export async function POST(request) {
     }
 
     const pricing = calculateOrderPricing(items);
-    const promotion = await validatePromotion(code, user.id, pricing.subtotal);
+    const promotion = await withTransaction(async (connection) => (
+      findApplicablePromotion(connection, { userId: user.id, code, subtotal: pricing.subtotal })
+    ));
 
     return apiSuccess({
       promotion: {
         id: promotion.id,
         code: promotion.code,
         name: promotion.name,
-        discountType: promotion.discountType,
         discountAmount: promotion.discountAmount,
       },
       pricing: {
