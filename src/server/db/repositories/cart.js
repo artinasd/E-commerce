@@ -38,7 +38,7 @@ export async function addCartItem(userId, variantId, quantity) {
     if (cartRows.length === 0) await connection.execute(`INSERT INTO carts (user_id) VALUES (?)`, [userId]);
     const [resolvedCartRows] = await connection.execute(`SELECT id FROM carts WHERE user_id = ? LIMIT 1 FOR UPDATE`, [userId]);
     const cartId = resolvedCartRows[0].id;
-    const [variantRows] = await connection.execute(`SELECT v.id, GREATEST(COALESCE(i.quantity, 0) - COALESCE(i.reserved_quantity, 0), 0) AS available_quantity FROM product_variants v LEFT JOIN inventory i ON i.variant_id = v.id WHERE v.id = ? AND v.is_active = TRUE LIMIT 1`, [variantId]);
+    const [variantRows] = await connection.execute(`SELECT v.id, GREATEST(COALESCE(i.quantity, 0) - COALESCE(i.reserved_quantity, 0), 0) AS available_quantity FROM product_variants v LEFT JOIN inventory i ON i.variant_id = v.id WHERE v.id = ? AND v.is_active = TRUE LIMIT 1 FOR UPDATE`, [variantId]);
     const variant = variantRows[0];
     if (!variant) throw new Error('Product variant not found.');
     const [existingRows] = await connection.execute(`SELECT id, quantity FROM cart_items WHERE cart_id = ? AND variant_id = ? FOR UPDATE`, [cartId, variantId]);
@@ -53,10 +53,23 @@ export async function addCartItem(userId, variantId, quantity) {
 
 export async function updateCartItem(userId, itemId, quantity) {
   assertQuantity(quantity);
-  const rows = await query(`SELECT ci.id FROM cart_items ci INNER JOIN carts c ON c.id = ci.cart_id WHERE ci.id = ? AND c.user_id = ? LIMIT 1`, [itemId, userId]);
-  if (!rows[0]) throw new Error('Cart item not found.');
-  const result = await query(`UPDATE cart_items ci INNER JOIN carts c ON c.id = ci.cart_id INNER JOIN product_variants v ON v.id = ci.variant_id LEFT JOIN inventory i ON i.variant_id = v.id SET ci.quantity = ? WHERE ci.id = ? AND c.user_id = ? AND v.is_active = TRUE AND GREATEST(COALESCE(i.quantity, 0) - COALESCE(i.reserved_quantity, 0), 0) >= ?`, [quantity, itemId, userId, quantity]);
-  if (result.affectedRows !== 1) throw new Error('Requested quantity exceeds available inventory or the product is unavailable.');
+  return withTransaction(async (connection) => {
+    const [rows] = await connection.execute(
+      `SELECT ci.id, ci.variant_id,
+              GREATEST(COALESCE(i.quantity, 0) - COALESCE(i.reserved_quantity, 0), 0) AS available_quantity
+         FROM cart_items ci
+         INNER JOIN carts c ON c.id = ci.cart_id AND c.user_id = ?
+         INNER JOIN product_variants v ON v.id = ci.variant_id AND v.is_active = TRUE
+         LEFT JOIN inventory i ON i.variant_id = v.id
+        WHERE ci.id = ?
+        FOR UPDATE`,
+      [userId, itemId],
+    );
+    if (!rows[0]) throw new Error('Cart item not found or product is unavailable.');
+    if (quantity > Number(rows[0].available_quantity)) throw new Error('Requested quantity exceeds available inventory.');
+    const [result] = await connection.execute(`UPDATE cart_items SET quantity = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`, [quantity, itemId]);
+    if (result.affectedRows !== 1) throw new Error('Cart item could not be updated.');
+  });
 }
 
 export async function removeCartItem(userId, itemId) {
