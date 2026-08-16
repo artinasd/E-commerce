@@ -7,10 +7,10 @@ Iranian Persian E-Commerce Platform
 Production-quality Persian RTL e-commerce platform for Iranian users, inspired by the breadth and usability of major Iranian marketplaces while intentionally pursuing a more modern, refined, lightweight, and distinctive UX.
 
 ## Current Version
-0.2.0 — Database Foundation
+0.3.0 — Data Access Foundation
 
 ## Current Development Phase
-Phase 4 — Database Foundation
+Phase 4 — Database / Data Access Foundation
 
 ## Current Mode
 MODE A — GITHUB WRITE MODE
@@ -22,10 +22,10 @@ MODE A — GITHUB WRITE MODE
 `main`
 
 ## Latest Commit
-`137fad1d79ee4a4f4a903fedbe7218237be82d94` — Define database and authentication environment contract
+`3421ba009839866478f6a294e44cf64bc86e39f8` — Add database repository exports
 
 ## Architecture Summary
-Next.js App Router full-stack application using React, JavaScript, TailwindCSS, Next.js Route Handlers, raw parameterized SQL through `mysql2`, relational MySQL persistence, session-based authentication, RBAC, modular services/repositories, and a custom RTL-first design system.
+Next.js App Router full-stack application using React, JavaScript, TailwindCSS, Next.js Route Handlers, raw parameterized SQL through `mysql2`, relational MySQL persistence, session-based authentication, RBAC, modular repositories/services, and a custom RTL-first design system.
 
 ## Technology Stack
 - React
@@ -58,8 +58,17 @@ E-commerce/
 │   ├── lib/
 │   ├── middleware/
 │   └── server/
-│       └── db/
-│           └── connection.js
+│       ├── db/
+│       │   ├── connection.js
+│       │   ├── errors.js
+│       │   └── repositories/
+│       │       ├── index.js
+│       │       ├── users.js
+│       │       ├── catalog.js
+│       │       ├── inventory.js
+│       │       ├── cart.js
+│       │       └── orders.js
+│       └── ...
 ├── tests/
 ├── .env.example
 ├── .gitignore
@@ -97,42 +106,28 @@ Implemented in `database/migrations/001_initial_schema.sql`:
 - audit_logs
 
 ## Database Relationships
-- User → Sessions
-- User → Addresses
-- User → Cart
-- User → Orders
-- User → Favorites
-- User → Reviews
-- Category → child Categories
-- Category → Products
+- User → Sessions, Addresses, Cart, Orders, Favorites, Reviews, Audit Logs
+- Category → child Categories and Products
 - Brand → Products
-- Product → Variants
-- Product → Images
-- Product → Attributes
-- Variant → Inventory
+- Product → Variants, Images, Attributes, Reviews
+- Variant → Inventory and Cart/Order Items
 - Cart → Cart Items
-- Variant → Cart Items
-- Order → Order Items
-- Variant → Order Items
-- Order → Payments
-- Order → Coupons
-- Product → Reviews
-- User → Audit Logs
+- Order → Order Items, Payments, Coupons
 
 ## Database Design Decisions
 - InnoDB is used for transactional integrity.
-- `utf8mb4` is the database character set/collation foundation.
+- `utf8mb4` is the database character-set foundation.
 - Monetary values use integer amounts rather than floating point.
 - Foreign keys protect relational integrity.
 - Unique constraints protect slugs, SKUs, coupon codes, and user identifiers.
-- Indexes target expected catalog, account, order, and operational queries.
+- Indexes target catalog, account, cart, order, and operational queries.
 - Orders retain historical shipping/product snapshots.
-- Soft deletion is used selectively for catalog/user entities where useful.
-- Order creation and other multi-step business operations must use transactions.
+- Soft deletion is used selectively for catalog/user entities.
+- Multi-step business operations use transactions.
 - Migrations are numbered and should become immutable after shared deployment.
 
 ## Authentication Strategy
-Planned secure session-based authentication. `AUTH_SECRET` is reserved in the environment contract. Authentication implementation is not yet complete.
+Planned secure session-based authentication using the existing `sessions` table and a server-managed HTTP-only cookie. Authentication implementation is not yet complete.
 
 ## Authorization Strategy
 Server-enforced RBAC with:
@@ -159,9 +154,17 @@ Planned namespaces:
 No feature API routes have been implemented yet.
 
 ## Business Logic Completed
-- Database connection pool abstraction
+- MySQL connection pooling
 - Parameterized query helper
 - Transaction helper
+- User lookup repository
+- Product/catalog read repository
+- Category and brand read repositories
+- Inventory lookup/reservation/release/decrement operations
+- Cart creation/read/add/update/remove operations
+- Order read/list/create repository operations
+- Shared database/domain error types
+- Central repository exports
 
 ## UI Components Completed
 None beyond the initial application shell from Phase 2.
@@ -178,6 +181,7 @@ Initial shell only; feature component system remains outstanding.
 ## Utilities
 - Database query helper
 - Database transaction helper
+- Shared database/domain error normalization
 
 ## Middleware
 Not yet implemented.
@@ -226,6 +230,8 @@ A lockfile has not yet been generated/verified because dependency installation i
 - Server-side authorization
 - Explicit error handling
 - No ORM
+- Repository functions encapsulate SQL access
+- Transaction boundaries are explicit
 
 ## Naming Conventions
 - React components: PascalCase
@@ -244,7 +250,7 @@ A lockfile has not yet been generated/verified because dependency installation i
 7. Raw SQL is mandatory.
 8. `mysql2` is used for promise-based MySQL access.
 9. No ORM is used.
-10. Next.js App Router is the full-stack application foundation.
+10. Next.js App Router is the full-stack foundation.
 11. Persian RTL is a first-class requirement.
 12. The application is initially single-store rather than marketplace/multi-vendor.
 13. Security, accessibility, performance, and production concerns remain first-class requirements.
@@ -267,24 +273,32 @@ A lockfile has not yet been generated/verified because dependency installation i
 - Parameterized query helper
 - Transaction helper
 - Database setup documentation
+- User repository
+- Catalog repository
+- Inventory repository
+- Cart repository
+- Order repository
+- Shared database error classes
+- Repository barrel exports
 
 ## Current Task
-Phase 4 database foundation is implemented at the schema and connection-layer level.
+Phase 4 data-access foundation completed. The repositories now provide the server-side persistence primitives needed for authentication and commerce APIs.
 
 ## Next Planned Task
-Implement the database repositories and server-side data-access foundations, beginning with catalog reads and then authentication persistence.
+Phase 5 — Authentication foundation: password hashing, credential validation, session creation/rotation/revocation, secure HTTP-only cookies, authentication service, and route protection.
 
 ## Known Issues
 - MySQL schema has not been executed against a real database in this environment.
 - npm dependencies have not been installed/executed in this environment.
 - No automated test run has been performed yet.
 - Authentication is not implemented yet.
-- No API feature routes are implemented yet.
+- No feature API routes are implemented yet.
 
 ## Technical Debt
 - Migration runner/tooling is not yet implemented.
 - Database seed data is not yet implemented.
 - Automated schema verification is not yet implemented.
+- Repository-level integration tests remain outstanding.
 
 ## Outstanding Features
 All customer, admin, authentication, commerce, and operational features remain to be implemented.
@@ -304,13 +318,13 @@ All customer, admin, authentication, commerce, and operational features remain t
 Not started.
 
 ## Testing Status
-Not started. Static repository-level verification performed after writes.
+Not started. Repository files have been reviewed after writes, but no runtime test execution is available through the current GitHub connector.
 
 ## Repository Verification Status
-Verified latest `main` tree after Phase 4 writes. Database migration, connection layer, database documentation, package dependency, and environment contract are present.
+Verified repository files after the data-access writes. The latest commit on `main` is `3421ba009839866478f6a294e44cf64bc86e39f8`.
 
 ## Notes For Future Continuation
-Do not recreate the project. Continue from the latest task. Before adding feature code, inspect the current repository state. The database schema in `database/migrations/001_initial_schema.sql` is the current schema contract. New schema changes should use new migrations rather than destructive edits to the existing migration after shared use.
+Do not recreate the project. Continue from the latest task. The database migration is the schema contract. Repositories must remain the only direct SQL access layer for application services. Do not expose raw database errors through public APIs.
 
 ## Conversation Summary
-The user requested a production-quality Persian RTL Iranian e-commerce platform with a modern, lightweight UI inspired by but not copied from major Iranian e-commerce products. The GitHub repository `artinasd/E-commerce` was verified as empty and writable. The initial Next.js foundation was created directly in GitHub. Phase 4 then established the initial relational MySQL schema, database connection/transaction abstraction, database documentation, and environment contract. The latest verified repository commit is `137fad1d79ee4a4f4a903fedbe7218237be82d94`.
+The user requested a production-quality Persian RTL Iranian e-commerce platform with a modern, lightweight UI inspired by but not copied from major Iranian e-commerce products. The GitHub repository `artinasd/E-commerce` was verified as empty and writable. The initial Next.js foundation was created directly in GitHub. Phase 4 established the relational MySQL schema, database connection/transaction abstraction, environment contract, and the first server-side repository layer for users, catalog, inventory, carts, and orders. Shared database errors and repository exports were also added. Authentication is the next major phase.
