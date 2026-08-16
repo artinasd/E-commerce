@@ -1,4 +1,4 @@
-import { query } from '../connection.js';
+import { query, withTransaction } from '../connection.js';
 
 export async function findOrderByIdForUser(orderId, userId) {
   const rows = await query(
@@ -71,7 +71,7 @@ export async function createOrder({
     throw new Error('An order must contain at least one item.');
   }
 
-  return (await import('../connection.js')).withTransaction(async (connection) => {
+  return withTransaction(async (connection) => {
     const [orderResult] = await connection.execute(
       `INSERT INTO orders (
         user_id, order_number, status, payment_status,
