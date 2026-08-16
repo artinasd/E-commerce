@@ -1,3 +1,7 @@
+import { apiErrorResponse } from './errors.js';
+
+export { apiErrorResponse };
+
 export function apiSuccess(data = null, options = {}) {
   const normalizedOptions = typeof options === 'number' ? { status: options } : options;
   const { status = 200, meta = null } = normalizedOptions ?? {};
