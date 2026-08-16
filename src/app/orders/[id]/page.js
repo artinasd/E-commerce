@@ -1,0 +1,20 @@
+import Link from 'next/link';
+import { notFound } from 'next/navigation';
+import { requireUser } from '../../../lib/auth/session.js';
+import { getUserOrder } from '../../../server/orders/service.js';
+
+function price(value) { return new Intl.NumberFormat('fa-IR').format(Number(value || 0)); }
+const status = { PENDING: 'در انتظار پرداخت', PAID: 'پرداخت شده', PROCESSING: 'در حال پردازش', SHIPPED: 'ارسال شده', DELIVERED: 'تحویل شده', CANCELLED: 'لغو شده', REFUNDED: 'مرجوع شده' };
+const payment = { UNPAID: 'پرداخت نشده', PAID: 'پرداخت شده', FAILED: 'پرداخت ناموفق', REFUNDED: 'بازپرداخت شده' };
+
+export async function generateMetadata({ params }) {
+  try { const user = await requireUser(); const order = await getUserOrder(user.id, Number((await params).id)); return { title: order ? `سفارش ${order.orderNumber}` : 'سفارش پیدا نشد' }; } catch { return { title: 'سفارش' }; }
+}
+
+export default async function OrderDetailPage({ params }) {
+  const { id } = await params;
+  let order;
+  try { const user = await requireUser(); order = await getUserOrder(user.id, Number(id)); } catch { return <div className="mx-auto max-w-2xl px-4 py-24 text-center"><h1 className="text-2xl font-black">برای مشاهده سفارش وارد شوید</h1><Link href={`/login?returnTo=/orders/${encodeURIComponent(id)}`} className="mt-6 inline-flex rounded-xl bg-slate-950 px-5 py-3 text-sm font-bold text-white">ورود به حساب</Link></div>; }
+  if (!order) notFound();
+  return <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8"><Link href="/orders" className="text-xs font-semibold text-slate-500 hover:text-[var(--brand)]">← بازگشت به سفارش‌ها</Link><div className="mt-5 flex flex-col gap-4 rounded-2xl border border-[var(--border)] bg-white p-5 sm:flex-row sm:items-center sm:justify-between"><div><p className="text-xs text-slate-400">شماره سفارش</p><h1 className="mt-1 text-xl font-black">{order.orderNumber}</h1></div><div className="flex flex-wrap gap-2 text-xs"><span className="rounded-full bg-slate-100 px-3 py-1.5 font-bold">{status[order.status] || order.status}</span><span className="rounded-full bg-slate-50 px-3 py-1.5 font-semibold text-slate-500">{payment[order.paymentStatus] || order.paymentStatus}</span></div></div><div className="mt-5 grid gap-5 lg:grid-cols-[1fr_320px]"><section className="rounded-2xl border border-[var(--border)] bg-white p-5"><h2 className="font-black">اقلام سفارش</h2><div className="mt-4 divide-y divide-[var(--border)]">{order.items.map((item) => <div key={item.id} className="flex gap-4 py-4 first:pt-0 last:pb-0"><div className="min-w-0 flex-1"><p className="text-sm font-bold">{item.productName}</p><p className="mt-1 text-xs text-slate-400">{item.sku} · تعداد {new Intl.NumberFormat('fa-IR').format(item.quantity)}</p></div><p className="shrink-0 text-sm font-bold">{price(item.lineTotal)} تومان</p></div>)}</div></section><aside className="h-fit space-y-5 lg:sticky lg:top-24"><div className="rounded-2xl border border-[var(--border)] bg-white p-5"><h2 className="font-black">خلاصه مالی</h2><div className="mt-4 space-y-3 text-sm"><div className="flex justify-between"><span className="text-slate-500">جمع کالاها</span><span>{price(order.subtotal)}</span></div><div className="flex justify-between"><span className="text-slate-500">تخفیف</span><span>{price(order.discountAmount)}</span></div><div className="flex justify-between"><span className="text-slate-500">ارسال</span><span>{price(order.shippingAmount)}</span></div><div className="flex justify-between border-t border-[var(--border)] pt-4 font-black"><span>مبلغ نهایی</span><span>{price(order.totalAmount)} تومان</span></div></div></div><div className="rounded-2xl border border-[var(--border)] bg-white p-5"><h2 className="font-black">آدرس ارسال</h2><p className="mt-3 text-sm font-bold">{order.shippingAddress.recipientName}</p><p className="mt-1 text-xs leading-6 text-slate-500">{order.shippingAddress.province}، {order.shippingAddress.city}<br />{order.shippingAddress.addressLine}<br />{order.shippingAddress.postalCode} · {order.shippingAddress.recipientPhone}</p></div></aside></div></div>;
+}
