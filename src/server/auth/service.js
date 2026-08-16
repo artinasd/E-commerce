@@ -1,7 +1,8 @@
 import { hashPassword, verifyPassword } from '../../lib/auth/password.js';
 import { clearSessionCookie, setSessionCookie } from '../../lib/auth/session.js';
-import { findUserByEmail, findUserByPhone } from '../db/repositories/users.js';
+import { findUserByEmail, findUserByPhone, findUserById } from '../db/repositories/users.js';
 import {
+  createSession,
   createUserWithSession,
   revokeAllUserSessions,
   updateUserPassword,
@@ -96,7 +97,6 @@ export async function login({ email, phone, password }) {
     throw error;
   }
 
-  const { createSession } = await import('../db/repositories/auth.js');
   const session = await createSession(user.id);
   await setSessionCookie(session.token, session.expiresAt);
 
@@ -108,7 +108,7 @@ export async function logout() {
 }
 
 export async function changePassword(userId, currentPassword, newPassword) {
-  const user = await (await import('../db/repositories/users.js')).findUserById(userId);
+  const user = await findUserById(userId);
   if (!user || !user.password_hash) throw new Error('User account could not be found.');
 
   if (!(await verifyPassword(currentPassword, user.password_hash))) {
@@ -120,4 +120,5 @@ export async function changePassword(userId, currentPassword, newPassword) {
   const passwordHash = await hashPassword(newPassword);
   await updateUserPassword(userId, passwordHash);
   await revokeAllUserSessions(userId);
-};
+  await clearSessionCookie();
+}
