@@ -1,4 +1,4 @@
-import { query, withTransaction } from '../index.js';
+import { query, withTransaction } from '../connection.js';
 
 export async function createPayment({ orderId, provider, amount, status = 'PENDING' }) {
   const result = await query(`INSERT INTO payments (order_id, provider, amount, status) VALUES (?, ?, ?, ?)`, [orderId, provider, amount, status]);
