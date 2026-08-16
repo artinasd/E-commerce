@@ -1,4 +1,13 @@
-import { listProducts, findProductBySlug, listCategories, findCategoryBySlug, listBrands, findBrandBySlug } from '../db/repositories/catalog.js';
+import {
+  listProducts,
+  findProductBySlug,
+  findProductVariants,
+  findProductImages,
+  listCategories,
+  findCategoryBySlug,
+  listBrands,
+  findBrandBySlug,
+} from '../db/repositories/catalog.js';
 
 export async function getProducts(params = {}) {
   return listProducts({
@@ -14,7 +23,13 @@ export async function getProducts(params = {}) {
 
 export async function getProductBySlug(slug) {
   if (!slug || typeof slug !== 'string') return null;
-  return findProductBySlug(slug.trim().toLowerCase());
+  const product = await findProductBySlug(slug.trim().toLowerCase());
+  if (!product) return null;
+  const [variants, images] = await Promise.all([
+    findProductVariants(product.id),
+    findProductImages(product.id),
+  ]);
+  return { ...product, variants, images };
 }
 
 export async function getCategories(params = {}) {
