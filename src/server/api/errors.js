@@ -48,6 +48,8 @@ export function normalizeApiError(error) {
   if (error?.code === 'INSUFFICIENT_STOCK' || error?.code === 'INVENTORY_CONFLICT') {
     return ApiError.conflict('One or more products no longer have the requested quantity in stock.');
   }
+  if (error?.code === 'REVIEW_PURCHASE_REQUIRED') return ApiError.forbidden(error.message);
+  if (error?.code === 'REVIEW_ALREADY_EXISTS') return ApiError.conflict(error.message);
   return new ApiError('An unexpected server error occurred.');
 }
 
