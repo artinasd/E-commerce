@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import AddToCart from '../../../components/storefront/AddToCart';
+import FavoriteButton from '../../../components/storefront/FavoriteButton';
 
 async function getProduct(slug) {
   const base = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
@@ -46,8 +47,13 @@ export default async function ProductPage({ params }) {
 
         <section className="self-start lg:sticky lg:top-24">
           <div className="border-b border-[var(--border)] pb-6">
-            <p className="text-xs font-semibold text-slate-400">{product.brand_name || 'برند'}</p>
-            <h1 className="mt-2 text-2xl font-black leading-9 text-slate-950 sm:text-3xl">{product.name}</h1>
+            <div className="flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <p className="text-xs font-semibold text-slate-400">{product.brand_name || 'برند'}</p>
+                <h1 className="mt-2 text-2xl font-black leading-9 text-slate-950 sm:text-3xl">{product.name}</h1>
+              </div>
+              <FavoriteButton productId={product.id} className="shrink-0" />
+            </div>
             {product.short_description && <p className="mt-3 text-sm leading-7 text-slate-500">{product.short_description}</p>}
           </div>
 
