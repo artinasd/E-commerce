@@ -16,6 +16,11 @@ export async function getPaymentByProviderReference(provider, providerReference)
   return rows[0] || null;
 }
 
+export async function getActivePaymentForOrder(orderId) {
+  const rows = await query(`SELECT * FROM payments WHERE order_id = ? AND status = 'PENDING' ORDER BY id DESC LIMIT 1`, [orderId]);
+  return rows[0] || null;
+}
+
 export async function updatePaymentResult({ paymentId, status, providerReference = null, paidAt = null }) {
   await query(`UPDATE payments SET status = ?, provider_reference = COALESCE(?, provider_reference), paid_at = COALESCE(?, paid_at), updated_at = CURRENT_TIMESTAMP WHERE id = ?`, [status, providerReference, paidAt, paymentId]);
   return getPaymentById(paymentId);
