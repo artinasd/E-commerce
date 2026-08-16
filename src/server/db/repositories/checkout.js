@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { withTransaction } from '../connection.js';
+import { calculateOrderPricing } from '../../pricing/service.js';
 
 const RESERVATION_MINUTES = 30;
 
@@ -39,9 +40,7 @@ export async function placeOrderFromCart(userId, addressId) {
       }
     }
 
-    const subtotal = items.reduce((sum, item) => sum + Number(item.price) * Number(item.quantity), 0);
-    if (!Number.isSafeInteger(subtotal)) throw new Error('Invalid cart total.');
-
+    const pricing = calculateOrderPricing(items);
     const number = makeOrderNumber();
     const [orderResult] = await connection.execute(
       `INSERT INTO orders (
@@ -49,16 +48,15 @@ export async function placeOrderFromCart(userId, addressId) {
         shipping_amount, total_amount, shipping_recipient_name, shipping_recipient_phone,
         shipping_province, shipping_city, shipping_address, shipping_postal_code,
         placed_at, reservation_expires_at
-      ) VALUES (?, ?, 'PENDING', 'UNPAID', ?, 0, 0, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, DATE_ADD(CURRENT_TIMESTAMP, INTERVAL ? MINUTE))`,
-      [userId, number, subtotal, subtotal, address.recipient_name, address.recipient_phone, address.province, address.city, address.address_line, address.postal_code, RESERVATION_MINUTES],
+      ) VALUES (?, ?, 'PENDING', 'UNPAID', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, DATE_ADD(CURRENT_TIMESTAMP, INTERVAL ? MINUTE))`,
+      [userId, number, pricing.subtotal, pricing.discountAmount, pricing.shippingAmount, pricing.totalAmount, address.recipient_name, address.recipient_phone, address.province, address.city, address.address_line, address.postal_code, RESERVATION_MINUTES],
     );
 
-    for (const item of items) {
-      const lineTotal = Number(item.price) * Number(item.quantity);
+    for (const item of pricing.items) {
       await connection.execute(
         `INSERT INTO order_items (order_id, variant_id, product_name, sku, unit_price, quantity, discount_amount, line_total)
-         VALUES (?, ?, ?, ?, ?, ?, 0, ?)`,
-        [orderResult.insertId, item.variant_id, item.product_name, item.sku, item.price, item.quantity, lineTotal],
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [orderResult.insertId, item.variant_id, item.product_name, item.sku, item.unitPrice, item.quantity, item.discountAmount, item.lineTotal],
       );
 
       const [reserved] = await connection.execute(
@@ -74,7 +72,7 @@ export async function placeOrderFromCart(userId, addressId) {
     return {
       id: Number(orderResult.insertId),
       orderNumber: number,
-      totalAmount: subtotal,
+      totalAmount: pricing.totalAmount,
       reservationExpiresAt: new Date(Date.now() + RESERVATION_MINUTES * 60 * 1000),
     };
   });
