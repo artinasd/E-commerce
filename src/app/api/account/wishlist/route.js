@@ -1,0 +1,3 @@
+import { query } from '../../../../server/db/connection.js';
+import { requireUser } from '../../../../lib/auth/session.js';
+export async function GET(){try{const u=await requireUser();return Response.json({items:await query(`SELECT f.product_id,p.name,p.slug,p.thumbnail_url,COALESCE(v.price,p.base_price) price FROM favorites f INNER JOIN products p ON p.id=f.product_id AND p.deleted_at IS NULL LEFT JOIN product_variants v ON v.id=p.default_variant_id WHERE f.user_id=? ORDER BY f.created_at DESC`,[u.id])});}catch(error){return Response.json({error:error.message||'Unauthorized'},{status:401});}}
