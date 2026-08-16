@@ -4,10 +4,11 @@ import { validateOrderId } from '../../../server/orders/validation.js';
 import { initiateOrderPayment } from '../../../server/payments/initiation.js';
 
 export async function POST(request) {
+  let orderId = null;
   try {
     const user = await requireUser();
     const body = await request.json();
-    const orderId = validateOrderId(body?.orderId);
+    orderId = validateOrderId(body?.orderId);
     const baseUrl = process.env.APP_URL;
     if (!baseUrl) {
       const error = new Error('Application URL is not configured.');
@@ -19,11 +20,11 @@ export async function POST(request) {
     const result = await initiateOrderPayment({ userId: user.id, orderId, callbackUrl });
     return apiSuccess(result, 201);
   } catch (error) {
-    if (error?.statusCode === 503 && error?.message === 'Payment provider is not configured.') {
+    if (error?.statusCode === 503 && error?.message === 'Payment provider is not configured.' && orderId) {
       return apiSuccess({
         paymentAvailable: false,
-        orderId: Number(new URL(request.url).searchParams.get('orderId') || 0),
-        redirectUrl: `/orders/${encodeURIComponent(new URL(request.url).searchParams.get('orderId') || '')}?payment=unavailable`,
+        orderId,
+        redirectUrl: `/orders/${encodeURIComponent(orderId)}?payment=unavailable`,
       });
     }
     return apiErrorResponse(error, 'Unable to initiate payment.');
