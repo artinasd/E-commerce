@@ -1,10 +1,41 @@
-import { ApiError } from './error.js';
+export class ApiError extends Error {
+  constructor(message, status = 500, code = 'INTERNAL_ERROR', details = null) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+    this.code = code;
+    this.details = details;
+  }
 
-export { ApiError };
+  static badRequest(message = 'Invalid request.', details = null) {
+    return new ApiError(message, 400, 'BAD_REQUEST', details);
+  }
+
+  static unauthorized(message = 'Authentication required.') {
+    return new ApiError(message, 401, 'UNAUTHENTICATED');
+  }
+
+  static forbidden(message = 'You do not have permission to perform this action.') {
+    return new ApiError(message, 403, 'FORBIDDEN');
+  }
+
+  static notFound(message = 'Resource not found.') {
+    return new ApiError(message, 404, 'NOT_FOUND');
+  }
+
+  static conflict(message = 'The request conflicts with the current resource state.') {
+    return new ApiError(message, 409, 'CONFLICT');
+  }
+
+  static tooManyRequests(message = 'Too many requests. Please try again later.', retryAfterSeconds = null) {
+    const error = new ApiError(message, 429, 'RATE_LIMITED');
+    error.retryAfterSeconds = retryAfterSeconds;
+    return error;
+  }
+}
 
 export function normalizeApiError(error) {
   if (error instanceof ApiError) return error;
-
   if (error?.code === 'UNAUTHENTICATED') return ApiError.unauthorized();
   if (error?.code === 'FORBIDDEN') return ApiError.forbidden();
   if (error?.code === 'IDENTITY_EXISTS' || error?.code === 'ER_DUP_ENTRY') return ApiError.conflict();
@@ -17,7 +48,6 @@ export function normalizeApiError(error) {
   if (error?.code === 'INSUFFICIENT_STOCK' || error?.code === 'INVENTORY_CONFLICT') {
     return ApiError.conflict('One or more products no longer have the requested quantity in stock.');
   }
-
   return new ApiError('An unexpected server error occurred.');
 }
 
