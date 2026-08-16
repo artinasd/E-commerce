@@ -1,4 +1,6 @@
 import "./globals.css";
+import Header from "../components/storefront/Header";
+import Footer from "../components/storefront/Footer";
 
 export const metadata = {
   title: {
@@ -11,7 +13,11 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="fa" dir="rtl">
-      <body>{children}</body>
+      <body className="bg-[var(--background)] text-[var(--foreground)]">
+        <Header />
+        <main>{children}</main>
+        <Footer />
+      </body>
     </html>
   );
 }
