@@ -4,13 +4,13 @@
 Iranian Persian E-Commerce Platform
 
 ## Project Description
-Production-oriented Persian RTL e-commerce platform for Iranian customers, inspired by the breadth and usability of major Iranian marketplaces while intentionally pursuing a lighter, faster, more modern, refined, and distinctive UX.
+Production-oriented Persian RTL e-commerce platform for Iranian customers. The product direction is inspired by the breadth and usability of leading Iranian marketplaces, but intentionally aims for a lighter, faster, cleaner, more modern, and more distinctive experience.
 
 ## Current Version
-0.6.0 — Backend commerce foundation
+0.8.0 — Storefront + transactional checkout foundation
 
 ## Current Development Phase
-Phase 6 — Backend/API foundation and customer commerce services
+Phase 7 — Customer storefront and purchase journey
 
 ## Current Mode
 MODE A — GITHUB WRITE MODE
@@ -22,10 +22,14 @@ MODE A — GITHUB WRITE MODE
 `main`
 
 ## Latest Commit
-`e8c2ad429aae9705e9b760be8d6475afa5e38a3d` — Re-export centralized API error handling for existing route imports
+This ledger update is the latest verified repository write.
 
 ## Architecture Summary
-Next.js App Router full-stack application using React, JavaScript, TailwindCSS, Next.js Route Handlers, raw parameterized SQL through `mysql2`, relational MySQL persistence, server-managed session authentication, RBAC, modular repositories/services, and a custom RTL-first design system. The backend follows Route Handler → validation → service → repository/transaction → MySQL separation.
+Next.js App Router full-stack application using React, JavaScript, TailwindCSS, Next.js Route Handlers, raw parameterized SQL through `mysql2`, relational MySQL persistence, application-managed HTTP-only sessions, RBAC, modular repositories/services, and a custom RTL-first storefront design system.
+
+Backend flow: `Route Handler → auth/validation → service → repository/transaction → MySQL`.
+Frontend flow: `Server Component → server API/data source → reusable storefront components → client interaction only where required`.
+The client is not authoritative for pricing, inventory, cart persistence, authentication, or order creation.
 
 ## Technology Stack
 - React 19
@@ -45,69 +49,57 @@ Next.js App Router full-stack application using React, JavaScript, TailwindCSS, 
 E-commerce/
 ├── .github/
 ├── database/
-│   ├── migrations/
-│   │   └── 001_initial_schema.sql
+│   ├── migrations/001_initial_schema.sql
 │   ├── seeds/
 │   └── README.md
 ├── docs/
 ├── public/
 ├── src/
 │   ├── app/
-│   │   └── api/
-│   │       ├── account/
-│   │       │   ├── profile/route.js
-│   │       │   └── addresses/
-│   │       │       ├── route.js
-│   │       │       └── [id]/route.js
-│   │       ├── auth/
-│   │       │   ├── register/route.js
-│   │       │   ├── login/route.js
-│   │       │   ├── logout/route.js
-│   │       │   ├── me/route.js
-│   │       │   └── password/route.js
-│   │       ├── brands/
-│   │       ├── categories/
-│   │       ├── cart/
-│   │       ├── health/route.js
-│   │       ├── orders/
-│   │       └── products/
-│   ├── components/
-│   ├── features/
-│   ├── hooks/
-│   ├── lib/
-│   │   └── auth/
-│   │       ├── password.js
-│   │       └── session.js
+│   │   ├── api/
+│   │   │   ├── account/
+│   │   │   ├── auth/
+│   │   │   ├── brands/
+│   │   │   ├── categories/
+│   │   │   ├── cart/
+│   │   │   ├── checkout/route.js
+│   │   │   ├── health/route.js
+│   │   │   ├── orders/
+│   │   │   ├── products/
+│   │   │   └── addresses/route.js
+│   │   ├── products/page.js
+│   │   ├── products/[slug]/page.js
+│   │   ├── cart/
+│   │   ├── checkout/
+│   │   ├── layout.js
+│   │   ├── page.js
+│   │   └── globals.css
+│   ├── components/storefront/
+│   │   ├── Header.js
+│   │   ├── Footer.js
+│   │   ├── ProductCard.js
+│   │   ├── HomeSections.js
+│   │   └── AddToCart.js
+│   ├── lib/auth/
+│   │   ├── password.js
+│   │   └── session.js
 │   └── server/
 │       ├── account/
-│       │   ├── service.js
-│       │   └── validation.js
+│       ├── address/service.js
 │       ├── api/
-│       │   ├── errors.js
-│       │   └── response.js
 │       ├── auth/
-│       │   ├── rate-limit.js
-│       │   ├── service.js
-│       │   └── validation.js
 │       ├── catalog/
-│       │   ├── service.js
-│       │   └── validation.js
 │       ├── cart/
-│       │   ├── service.js
-│       │   └── validation.js
-│       ├── orders/
-│       │   ├── service.js
-│       │   └── validation.js
+│       ├── checkout/service.js
 │       └── db/
 │           ├── connection.js
 │           ├── errors.js
 │           └── repositories/
-│               ├── index.js
-│               ├── users.js
 │               ├── auth.js
 │               ├── catalog.js
-│               ├── inventory.js
 │               ├── cart.js
+│               ├── addresses.js
+│               ├── checkout.js
 │               └── orders.js
 ├── tests/
 ├── .env.example
@@ -121,31 +113,15 @@ E-commerce/
 ```
 
 ## Database Schema
-Implemented in `database/migrations/001_initial_schema.sql`:
-- users
-- sessions
-- categories
-- brands
-- products
-- product_variants
-- attributes
-- attribute_values
-- product_attributes
-- product_images
-- inventory
-- addresses
-- carts
-- cart_items
-- orders
-- order_items
-- payments
-- coupons
-- order_coupons
-- favorites
-- reviews
-- audit_logs
+The verified migration is `database/migrations/001_initial_schema.sql` and defines:
+users, sessions, categories, brands, products, product_variants, attributes, attribute_values, product_attributes, product_images, inventory, addresses, carts, cart_items, orders, order_items, payments, coupons, order_coupons, favorites, reviews, and audit_logs.
 
-Important verified schema fact: the address table is named `addresses`, not `user_addresses`, and it currently has no `deleted_at` column. Account services were corrected to use the verified `addresses` schema rather than inventing a table.
+Important verified facts:
+- Address table is `addresses`.
+- Inventory is a separate `inventory` table keyed by `variant_id`.
+- Product variants do not contain stock quantities directly.
+- Orders contain historical shipping snapshots.
+- Order items contain historical product/SKU/price/quantity snapshots.
 
 ## Database Relationships
 - User → Sessions, Addresses, Cart, Orders, Favorites, Reviews, Audit Logs
@@ -157,281 +133,163 @@ Important verified schema fact: the address table is named `addresses`, not `use
 - Order → Order Items, Payments, Coupons
 
 ## Database Design Decisions
-- InnoDB is used for transactional integrity.
-- `utf8mb4` is the database character-set foundation.
-- Monetary values are stored as integer amounts.
-- Foreign keys protect relational integrity.
-- Unique constraints protect slugs, SKUs, coupon codes, and user identifiers.
-- Indexes target catalog, account, cart, order, and operational queries.
-- Orders retain historical shipping/product snapshots.
-- Soft deletion is used selectively for users and catalog entities where defined by the schema; addresses currently use ownership-scoped deletion because the verified schema does not define soft deletion for addresses.
-- Multi-step business operations use transactions.
-- Migrations are numbered and should be treated as immutable after shared deployment.
-- Checkout locks inventory rows and revalidates available inventory inside the order transaction.
+- InnoDB for transactional integrity.
+- `utf8mb4` for Persian/Unicode support.
+- Monetary values are integer amounts.
+- SQL is parameterized.
+- Foreign keys and unique constraints protect integrity.
+- Indexes cover major catalog/account/cart/order lookups.
+- Soft deletion follows the existing schema.
+- Addresses are ownership-scoped; the schema has no address `deleted_at`.
+- Checkout uses a database transaction and revalidates inventory on the server.
+- Checkout increments `inventory.reserved_quantity` and removes cart items atomically.
+- Orders begin `PENDING` / `UNPAID`; payment integration and reservation release rules remain outstanding.
 
 ## Authentication Strategy
-Server-managed session authentication using the `sessions` table and secure HTTP-only cookie `ecom_session`.
-- Passwords are hashed with Node `crypto.scrypt` using random salts.
-- Raw session tokens are never stored in the database; SHA-256 token hashes are stored.
-- Sessions expire after 30 days.
-- Session cookies use HttpOnly, SameSite=Lax, Path=/, and Secure in production.
-- Sessions can be individually revoked or revoked for all sessions belonging to a user.
-- Password changes revoke all existing sessions and clear the current cookie.
+Application-managed sessions using the `sessions` table and secure HTTP-only `ecom_session` cookie. Passwords use Node `crypto.scrypt`; raw session tokens are not persisted. Sessions expire after 30 days. Cookies use HttpOnly, SameSite=Lax, Path=/, and Secure in production. `requireUser()` and `requireRole()` enforce server-side authorization.
 
 ## Authorization Strategy
-Server-enforced RBAC with CUSTOMER, ADMIN, and SUPER_ADMIN roles. `requireUser()` and `requireRole()` provide server-side authorization primitives. Customer cart/order/account APIs scope records to the authenticated user's ID.
+RBAC roles: CUSTOMER, ADMIN, SUPER_ADMIN. Customer resources are scoped by authenticated user ID. Administrative authorization remains server-side.
 
-## API Routes
-Implemented:
-- `POST /api/auth/register`
-- `POST /api/auth/login`
-- `POST /api/auth/logout`
-- `GET /api/auth/me`
-- `POST /api/auth/password`
-- `GET /api/health`
-- `GET /api/products`
-- `GET /api/products/[slug]`
-- `GET /api/categories`
-- `GET /api/categories/[slug]`
-- `GET /api/brands`
-- `GET /api/brands/[slug]`
-- `GET /api/cart`
-- `POST /api/cart/items`
-- `PATCH /api/cart/items/[id]`
-- `DELETE /api/cart/items/[id]`
-- `GET /api/orders`
-- `POST /api/orders`
-- `GET /api/orders/[id]`
-- `GET /api/account/profile`
-- `PATCH /api/account/profile`
-- `GET /api/account/addresses`
-- `POST /api/account/addresses`
-- `DELETE /api/account/addresses/[id]`
-
-Planned namespaces:
-- `/api/favorites`
-- `/api/reviews`
-- `/api/checkout` when a dedicated payment/checkout state machine is needed
-- `/api/admin`
-- `/api/inventory`
-- payment provider callbacks/webhooks
+## API Routes — Verified Implemented
+Authentication: `POST /api/auth/register`, `POST /api/auth/login`, `POST /api/auth/logout`, `GET /api/auth/me`, `POST /api/auth/password`.
+Catalog: `GET /api/products`, `GET /api/products/[slug]`, `GET /api/categories`, `GET /api/categories/[slug]`, `GET /api/brands`, `GET /api/brands/[slug]`.
+Cart: `GET /api/cart`, `POST /api/cart/items`, `PATCH /api/cart/items/[itemId]`, `DELETE /api/cart/items/[itemId]`.
+Account: existing profile/address APIs plus `GET /api/addresses` and `POST /api/addresses`.
+Checkout: `POST /api/checkout`.
+Orders: existing order read/list repository and API architecture is present.
 
 ## Business Logic Completed
-- MySQL connection pooling
-- Parameterized query helper
-- Transaction helper
-- User lookup repository
-- Catalog read repository
-- Category/brand read repositories
-- Inventory lookup/reservation/release/decrement primitives
-- Cart creation/read/add/update/remove operations
-- Order read/list repository operations
-- Transactional checkout/order creation
-- Server-side inventory revalidation and locking during checkout
-- Order historical item snapshots
-- Customer profile read/update
-- Customer address list/create/delete
-- Shared API response/error normalization
-- Request validation for catalog, cart, orders, and account features
-- Authentication rate-limit foundation
+- MySQL connection pool and transactions
+- Parameterized repository queries
+- Authentication/session management
+- Catalog reads/search/sorting/pagination
+- Inventory availability calculation
+- Cart create/read/add/update/remove
+- Product detail aggregation with variants/images
+- Customer address validation and creation
+- Atomic cart-to-order conversion
+- Server-side inventory revalidation and reservation during checkout
+- Order historical snapshots
+- Shared API response/error handling
 
-## UI Components Completed
-Initial application shell only. Production storefront component system remains outstanding.
+## Storefront UI Completed
+Global shell: RTL document, design tokens, light-first visual system, header, responsive navigation, search entry, account/cart entry points, footer, focus treatment, reduced-motion support.
+
+Homepage: editorial hero, category discovery, API-driven newest products, service/trust section, responsive product grid.
+
+Product discovery: `/products`, server-rendered listing, search, sorting, pagination, filter sidebar foundation, empty/error states, responsive grid.
+
+Product detail: `/products/[slug]`, dynamic metadata, breadcrumbs, gallery, brand/category, description, variants, inventory-aware availability, quantity selector, real cart API integration, not-found state.
+
+Cart: server-backed cart UI with quantity/removal synchronization and authentication handling.
 
 ## Pages Completed
-Initial Next.js application shell only. Storefront/account/admin pages remain outstanding.
+- `/`
+- `/products`
+- `/products/[slug]`
+- `/cart`
+
+Checkout and customer order pages remain to be built in the UI.
 
 ## Admin Pages Completed
 None.
 
 ## Shared Components
-Initial shell only; feature component system remains outstanding.
+- `Header`
+- `Footer`
+- `ProductCard`
+- `HomeSections`
+- `AddToCart`
 
 ## Utilities
-- Database query helper
-- Database transaction helper
-- Database/domain error normalization
-- Password hashing/verification
-- Session cookie management
-- Authentication validation
-- Authentication rate limiting
-- API success/error response helpers
-- Catalog query parsing
-- Cart/order/account validation
+Database query/transaction helpers, password hashing, session management, API response/error normalization, catalog/cart/address/checkout validation, and Persian number formatting at presentation boundaries.
 
 ## Middleware
-Not yet implemented. Route-level/server-side authentication primitives are currently used. Middleware may be introduced later for broad request policies, but authorization remains enforced at the server boundary.
+No global middleware currently required. Sensitive operations enforce authentication inside server route/service boundaries.
 
 ## Environment Variables
-- `NEXT_PUBLIC_APP_URL`
-- `DB_HOST`
-- `DB_PORT`
-- `DB_USER`
-- `DB_PASSWORD`
-- `DB_NAME`
-- `DB_CONNECTION_LIMIT`
-- `AUTH_SECRET`
+`NEXT_PUBLIC_APP_URL`, `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`, `DB_CONNECTION_LIMIT`, `AUTH_SECRET`.
+No production secrets are stored in the repository.
 
-No production secrets are stored in GitHub.
-
-## Dependencies Installed
-Declared:
-- next
-- react
-- react-dom
-- mysql2
-- tailwindcss
-- @tailwindcss/postcss
-- postcss
-- eslint
-- eslint-config-next
-
-No ORM or external authentication package is used.
+## Dependencies Installed / Declared
+next, react, react-dom, mysql2, tailwindcss, @tailwindcss/postcss, postcss, eslint, eslint-config-next. No ORM or external component library.
 
 ## Configuration Files
-- `.env.example`
-- `.gitignore`
-- `eslint.config.mjs`
-- `next.config.mjs`
-- `postcss.config.mjs`
-- `package.json`
+`.env.example`, `.gitignore`, `eslint.config.mjs`, `next.config.mjs`, `postcss.config.mjs`, `package.json`.
 
 ## Coding Conventions
-- JavaScript only
-- ES6+
-- Feature-oriented organization
-- Separation of concerns
-- Reusable components
-- Parameterized SQL
-- Server-side authorization
-- Explicit error handling
-- No ORM
-- Repository functions encapsulate SQL access
-- Transaction boundaries are explicit
-- Public APIs avoid exposing raw database errors
-- Sensitive API responses use `Cache-Control: no-store`
+JavaScript only; ES6+; Server Components by default; Client Components only for interaction; repository owns SQL; services own business rules; route handlers own HTTP concerns; parameterized SQL; server authoritative for prices/stock/identity/permissions/order creation; no fake production APIs.
 
 ## Naming Conventions
-- React components: PascalCase
-- Functions/variables: camelCase
-- API resources: lowercase plural resource paths
-- Database naming: snake_case
-- Migration files: sequential numeric prefix plus descriptive name
+Components PascalCase; functions/variables camelCase; database snake_case; API resource paths lowercase plural where applicable; migrations numbered descriptive names.
 
 ## Important Design Decisions
 1. GitHub is the source of truth.
 2. MODE A is active and verified.
-3. Repository `artinasd/E-commerce` is being built directly in GitHub.
-4. JavaScript is mandatory.
-5. npm is mandatory.
-6. MySQL is mandatory.
-7. Raw SQL is mandatory.
-8. `mysql2` is used for promise-based MySQL access.
-9. No ORM is used.
-10. Next.js App Router is the full-stack foundation.
-11. Persian RTL is a first-class requirement.
-12. The application is initially single-store rather than marketplace/multi-vendor.
-13. Security, accessibility, performance, and production concerns remain first-class requirements.
-14. Authentication uses application-managed sessions.
-15. Checkout prices are authoritative on the server and are never trusted from the client.
-16. Inventory is authoritative in the `inventory` table, not `product_variants`.
-17. Checkout locks inventory rows in deterministic variant order to reduce deadlock risk.
-18. Existing route imports of API error handling are supported by a re-export from `response.js`.
+3. `artinasd/E-commerce` is implemented directly in GitHub.
+4. JavaScript, npm, MySQL, `mysql2`, raw SQL, and no ORM are mandatory.
+5. Persian RTL is first-class.
+6. Light-first UI is the visual direction.
+7. Storefront code uses established backend APIs rather than duplicating business logic.
+8. Prices come from server-side variants.
+9. Inventory comes from `inventory`, not variants.
+10. Checkout creates a `PENDING`/`UNPAID` order and reserves stock transactionally.
+11. Payment processing is not simulated.
+12. Address/order behavior was added only after verifying the actual database schema.
 
 ## Git Workflow
-- `main` is the current default branch.
-- Logical commits are used.
-- Repository state is verified after writes.
-- Feature branches may be introduced for substantial feature work.
-- No GitHub operation is claimed without verification.
+Current branch is `main`. Logical commits are used. Every GitHub write returns a real commit SHA. Existing files are fetched before replacement. No push/PR claim is made without an actual operation.
 
 ## Completed Tasks
-- Repository inspection and GitHub capability verification
-- Initial project bootstrap
-- Next.js application foundation
-- Environment contract
-- Initial relational MySQL schema
-- MySQL connection pool and transactions
-- Database documentation
-- User, catalog, inventory, cart, and order repositories
-- Password hashing and secure sessions
-- Authentication services and complete authentication API
-- API response/error foundation
-- Catalog service and APIs
-- Cart service and APIs
-- Checkout/order service and APIs
-- Customer profile/address service and APIs
-- Schema reconciliation after detecting that the address table is `addresses`
-- Checkout correction after detecting that inventory is stored separately from product variants
-- API helper compatibility correction for existing numeric-status route calls
+Repository/capability inspection; application bootstrap; MySQL schema/database layer; authentication; catalog backend; cart backend; customer address foundation; transactional checkout backend; global storefront shell; homepage; product listing; product detail; cart UI.
 
 ## Current Task
-Backend commerce foundation has been implemented and reconciled against the verified initial database schema.
+Implement the customer purchase journey UI: `/checkout`, using `POST /api/checkout` and `GET/POST /api/addresses`.
 
-## Next Planned Task
-Begin the customer-facing storefront architecture and implementation: global RTL layout, typography/design tokens, header/navigation, search, product listing, product detail, cart UI, account UI, and responsive mobile navigation. Backend feature work will continue only where a storefront feature requires it.
+## Next Planned Tasks
+1. `/checkout` UI with address selection and new-address form.
+2. Order confirmation page.
+3. Customer order list/detail UI.
+4. Address editing/default-address UI.
+5. Payment gateway abstraction and Iranian provider integration.
+6. Inventory reservation release/expiry policy.
+7. Favorites and reviews.
+8. Admin dashboard and management flows.
+9. Automated tests.
+10. Security/performance/accessibility audit.
+11. Deployment/CI/CD.
 
 ## Known Issues
-- MySQL schema has not been executed against a real database in this environment.
-- npm dependencies have not been installed/executed in this environment.
-- No automated test suite has been executed yet.
-- Runtime authentication, catalog, cart, account, and checkout behavior has not been exercised against a live database.
-- In-memory authentication rate limiting is process-local and should be replaced/augmented with shared infrastructure before horizontal production scaling.
+- No live MySQL database has been executed from this environment.
+- npm/build/lint/tests have not been executed through the available GitHub connector.
+- Checkout reserves inventory but payment settlement/release/expiry is not implemented.
+- Address editing/default-address update API remains incomplete.
 - Payment gateway integration is not implemented.
-- Order cancellation/refund state transitions are not implemented yet.
-- Address editing/default-address API is not implemented yet.
+- Order cancellation/refund state transitions are not complete.
+- Automated tests are outstanding.
+- Process-local rate limiting is insufficient for horizontally scaled production.
 
 ## Technical Debt
-- Migration runner/tooling is not yet implemented.
-- Database seed data is not yet implemented.
-- Automated schema verification is not yet implemented.
-- Repository-level integration tests remain outstanding.
-- Distributed rate limiting is outstanding for multi-instance deployment.
-- Email/SMS verification and password reset flows are outstanding.
-- Payment webhook idempotency and provider integration remain outstanding.
+Migration runner/tooling; seed data; runtime/integration tests; distributed rate limiting; payment idempotency/webhook processing; inventory reservation expiry/release worker; email/SMS verification and password reset; full admin authorization surface.
 
 ## Outstanding Features
-- Modern Persian RTL storefront
-- Product search/filtering UI
-- Product detail UI
-- Cart UI
-- Checkout UI
-- Iranian payment gateway integration
-- Order tracking/cancellation/refunds
-- Customer account UI
-- Address editing/default selection
-- Favorites
-- Reviews
-- Admin dashboard
-- Product/category/brand management
-- Inventory administration
-- Coupon management
-- Audit/operations tooling
-- Automated tests
-- Deployment configuration and CI/CD validation
+Checkout UI; payment gateway; order history/detail UI; address management UI; favorites; reviews; admin dashboard; product/category/brand management; inventory administration; coupons; audit/operations UI; automated tests; CI/CD/deployment verification.
 
 ## Future Improvements
-- Iranian payment gateways
-- SMS verification
-- shipping integrations
-- advanced search/indexing
-- recommendations
-- loyalty/wallet/gift cards
-- observability
-- distributed caching/rate limiting
-- marketplace functionality if requirements expand
+Iranian payment gateways, SMS verification, shipping-provider integrations, advanced search/indexing, recommendations, wallet/loyalty/gift cards, observability, distributed caching/rate limiting, and marketplace functionality only if later required.
 
 ## Deployment Status
 Not started.
 
 ## Testing Status
-Not started. Source-level consistency reviews have been performed after writes, including schema reconciliation, but no live runtime or automated test execution is currently available through the GitHub connector.
+No live runtime or automated suite has been executed through the current GitHub environment. Source-level consistency has been reviewed after implementation.
 
 ## Repository Verification Status
-GitHub writes are verified on `main`. The latest verified commit is `e8c2ad429aae9705e9b760be8d6475afa5e38a3d`. The initial schema was directly inspected and confirmed to define `addresses` and a separate `inventory` table.
+MODE A is verified. Files and writes are being performed directly against `artinasd/E-commerce` on `main`. The database migration was directly inspected from its Git blob and confirmed to contain order, address, cart, and separate inventory tables.
 
 ## Notes For Future Continuation
-Do not recreate the project. Continue from the current repository. Treat `database/migrations/001_initial_schema.sql` as the current schema contract. Repositories remain the direct SQL access layer for services. Do not expose raw database errors through public APIs. Before production deployment, replace process-local rate limiting with shared infrastructure appropriate to the deployment topology and implement payment/webhook idempotency, verification flows, and automated tests. The storefront should be built against the already-established APIs rather than duplicating business logic in client components.
+Do not rebuild existing functionality. Continue from the repository and this ledger. Treat `database/migrations/001_initial_schema.sql` as the schema contract. Do not invent a second order/address/cart model. The checkout UI must consume the real checkout/address APIs. Do not claim payment success until a real provider integration exists. Before production deployment, implement payment idempotency, reservation expiry/release, automated tests, distributed rate limiting, and runtime verification.
 
 ## Conversation Summary
-The user requested a production-quality Persian RTL Iranian e-commerce platform with a modern, lightweight UI inspired by but not copied from major Iranian e-commerce products. The repository `artinasd/E-commerce` was verified as writable and became the source of truth. The project was bootstrapped directly in GitHub. The relational MySQL schema, database layer, authentication, catalog APIs, cart APIs, transactional checkout/order APIs, and customer profile/address APIs have now been implemented. During continuation, the database schema was re-inspected and two important inconsistencies were corrected: the account service had incorrectly referenced a nonexistent `user_addresses` table, while the verified schema uses `addresses`; and checkout had incorrectly treated inventory as a column on `product_variants`, while the verified schema stores stock in `inventory`. API response/error helpers were also hardened for existing route usage. The next major focus is the customer-facing storefront UI and its integration with the established backend.
+The user requested a production-quality Persian RTL Iranian e-commerce platform with a modern, lightweight UI inspired by major Iranian marketplaces but not copied. GitHub write capability is available and the repository is the source of truth. The project was bootstrapped and the backend foundation was built first. The storefront shell, homepage, product discovery, product detail, and cart were implemented. During checkout planning, the actual migration was re-inspected and confirmed to contain `addresses`, `orders`, `order_items`, `payments`, and a separate `inventory` table. Rather than creating a duplicate schema, a customer address service/repository and an atomic checkout repository/service were added. Checkout validates that the authenticated user owns the selected address, locks the cart, verifies product/variant availability and stock, creates a historical order snapshot, reserves inventory, and clears cart items inside one transaction. The next exact task is the customer-facing `/checkout` page.
