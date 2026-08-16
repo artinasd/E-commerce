@@ -34,6 +34,38 @@ function sortClause(sort = 'created_at', direction = 'desc') {
   return `${column} ${dir}, p.is_featured DESC, p.id DESC`;
 }
 
+function buildProductConditions({ categoryId = null, brandId = null, status = 'ACTIVE', search = null, minPrice = undefined, maxPrice = undefined, inStock = false } = {}) {
+  const conditions = ['p.deleted_at IS NULL'];
+  const params = [];
+  if (status) { conditions.push('p.status = ?'); params.push(status); }
+  if (categoryId !== null) { conditions.push('p.category_id = ?'); params.push(categoryId); }
+  if (brandId !== null) { conditions.push('p.brand_id = ?'); params.push(brandId); }
+  if (search) {
+    conditions.push('(p.name LIKE ? OR p.short_description LIKE ?)');
+    const pattern = `%${search}%`;
+    params.push(pattern, pattern);
+  }
+  if (minPrice !== undefined) {
+    conditions.push('(SELECT MIN(v.price) FROM product_variants v WHERE v.product_id = p.id AND v.is_active = TRUE) >= ?');
+    params.push(minPrice);
+  }
+  if (maxPrice !== undefined) {
+    conditions.push('(SELECT MIN(v.price) FROM product_variants v WHERE v.product_id = p.id AND v.is_active = TRUE) <= ?');
+    params.push(maxPrice);
+  }
+  if (inStock) {
+    conditions.push(`EXISTS (
+      SELECT 1
+      FROM product_variants sv
+      INNER JOIN inventory si ON si.variant_id = sv.id
+      WHERE sv.product_id = p.id
+        AND sv.is_active = TRUE
+        AND GREATEST(si.quantity - si.reserved_quantity, 0) > 0
+    )`);
+  }
+  return { conditions, params };
+}
+
 export async function findProductById(id) {
   const rows = await query(`${PRODUCT_SELECT} WHERE p.id = ? AND p.deleted_at IS NULL LIMIT 1`, [id]);
   return rows[0] ?? null;
@@ -44,33 +76,15 @@ export async function findProductBySlug(slug) {
   return rows[0] ?? null;
 }
 
-export async function listProducts({ categoryId = null, brandId = null, status = 'ACTIVE', search = null, limit = 24, offset = 0, sort = 'created_at', direction = 'desc' } = {}) {
-  const conditions = ['p.deleted_at IS NULL'];
-  const params = [];
-  if (status) { conditions.push('p.status = ?'); params.push(status); }
-  if (categoryId !== null) { conditions.push('p.category_id = ?'); params.push(categoryId); }
-  if (brandId !== null) { conditions.push('p.brand_id = ?'); params.push(brandId); }
-  if (search) {
-    conditions.push('(p.name LIKE ? OR p.short_description LIKE ?)');
-    const pattern = `%${search}%`;
-    params.push(pattern, pattern);
-  }
+export async function listProducts({ categoryId = null, brandId = null, status = 'ACTIVE', search = null, minPrice = undefined, maxPrice = undefined, inStock = false, limit = 24, offset = 0, sort = 'created_at', direction = 'desc' } = {}) {
+  const { conditions, params } = buildProductConditions({ categoryId, brandId, status, search, minPrice, maxPrice, inStock });
   const safeLimit = Math.min(Math.max(Number(limit) || 24, 1), 100);
   const safeOffset = Math.max(Number(offset) || 0, 0);
   return query(`${PRODUCT_SELECT} WHERE ${conditions.join(' AND ')} ORDER BY ${sortClause(sort, direction)} LIMIT ${safeLimit} OFFSET ${safeOffset}`, params);
 }
 
-export async function countProducts({ categoryId = null, brandId = null, status = 'ACTIVE', search = null } = {}) {
-  const conditions = ['p.deleted_at IS NULL'];
-  const params = [];
-  if (status) { conditions.push('p.status = ?'); params.push(status); }
-  if (categoryId !== null) { conditions.push('p.category_id = ?'); params.push(categoryId); }
-  if (brandId !== null) { conditions.push('p.brand_id = ?'); params.push(brandId); }
-  if (search) {
-    conditions.push('(p.name LIKE ? OR p.short_description LIKE ?)');
-    const pattern = `%${search}%`;
-    params.push(pattern, pattern);
-  }
+export async function countProducts({ categoryId = null, brandId = null, status = 'ACTIVE', search = null, minPrice = undefined, maxPrice = undefined, inStock = false } = {}) {
+  const { conditions, params } = buildProductConditions({ categoryId, brandId, status, search, minPrice, maxPrice, inStock });
   const rows = await query(`SELECT COUNT(*) AS total FROM products p WHERE ${conditions.join(' AND ')}`, params);
   return Number(rows[0]?.total ?? 0);
 }
