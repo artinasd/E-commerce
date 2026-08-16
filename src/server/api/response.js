@@ -1,4 +1,7 @@
-export function apiSuccess(data = null, { status = 200, meta = null } = {}) {
+export function apiSuccess(data = null, options = {}) {
+  const normalizedOptions = typeof options === 'number' ? { status: options } : options;
+  const { status = 200, meta = null } = normalizedOptions ?? {};
+
   return Response.json({
     success: true,
     data,
