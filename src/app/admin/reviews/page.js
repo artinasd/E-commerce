@@ -41,13 +41,11 @@ export default async function AdminReviewsPage({ searchParams }) {
                 <p className="mt-3 text-xs text-slate-400">{review.createdAt ? new Date(review.createdAt).toLocaleString('fa-IR') : ''}</p>
                 {review.status === 'PENDING' && (
                   <div className="mt-4 flex gap-2">
-                    <form action={`/api/admin/reviews/${review.id}`} method="post">
-                      <input type="hidden" name="_method" value="PATCH" />
+                    <form action={`/api/admin/reviews/${review.id}/action`} method="post">
                       <input type="hidden" name="status" value="APPROVED" />
                       <button className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-bold text-white">تأیید</button>
                     </form>
-                    <form action={`/api/admin/reviews/${review.id}`} method="post">
-                      <input type="hidden" name="_method" value="PATCH" />
+                    <form action={`/api/admin/reviews/${review.id}/action`} method="post">
                       <input type="hidden" name="status" value="REJECTED" />
                       <button className="rounded-xl bg-rose-600 px-4 py-2 text-sm font-bold text-white">رد کردن</button>
                     </form>
