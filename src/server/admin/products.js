@@ -3,6 +3,8 @@ import { requireRole } from '../../lib/auth/session.js';
 
 async function admin() { await requireRole(['ADMIN', 'SUPER_ADMIN']); }
 
+const validStatuses = ['DRAFT', 'ACTIVE', 'ARCHIVED'];
+
 export async function listAdminProducts({ search = null, limit = 50, offset = 0 } = {}) {
   await admin();
   const params = [];
@@ -15,20 +17,31 @@ export async function listAdminProducts({ search = null, limit = 50, offset = 0 
 
 export async function setProductStatus(productId, status) {
   await admin();
-  if (!['DRAFT', 'ACTIVE', 'ARCHIVED'].includes(status)) throw new Error('Invalid product status.');
+  if (!validStatuses.includes(status)) throw new Error('Invalid product status.');
   return withTransaction(async (connection) => {
     const [result] = await connection.execute('UPDATE products SET status = ? WHERE id = ? AND deleted_at IS NULL', [status, productId]);
     if (result.affectedRows !== 1) throw new Error('Product not found.');
-    return { id: productId, status };
+    return { id: Number(productId), status };
   });
 }
 
 export async function createAdminProduct({ name, slug, shortDescription = null, description = null, categoryId = null, brandId = null, status = 'DRAFT', isFeatured = false }) {
   await admin();
   if (!name?.trim() || !slug?.trim()) throw new Error('Product name and slug are required.');
-  if (!['DRAFT', 'ACTIVE', 'ARCHIVED'].includes(status)) throw new Error('Invalid product status.');
+  if (!validStatuses.includes(status)) throw new Error('Invalid product status.');
   return withTransaction(async (connection) => {
     const [result] = await connection.execute(`INSERT INTO products (category_id, brand_id, name, slug, short_description, description, status, is_featured) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`, [categoryId || null, brandId || null, name.trim(), slug.trim(), shortDescription || null, description || null, status, Boolean(isFeatured)]);
     return { id: result.insertId, name: name.trim(), slug: slug.trim(), status };
+  });
+}
+
+export async function updateAdminProduct(productId, { name, slug, shortDescription = null, description = null, categoryId = null, brandId = null, status = 'DRAFT', isFeatured = false, seoTitle = null, seoDescription = null }) {
+  await admin();
+  if (!name?.trim() || !slug?.trim()) throw new Error('Product name and slug are required.');
+  if (!validStatuses.includes(status)) throw new Error('Invalid product status.');
+  return withTransaction(async (connection) => {
+    const [result] = await connection.execute(`UPDATE products SET category_id = ?, brand_id = ?, name = ?, slug = ?, short_description = ?, description = ?, status = ?, is_featured = ?, seo_title = ?, seo_description = ? WHERE id = ? AND deleted_at IS NULL`, [categoryId || null, brandId || null, name.trim(), slug.trim(), shortDescription || null, description || null, status, Boolean(isFeatured), seoTitle || null, seoDescription || null, productId]);
+    if (result.affectedRows !== 1) throw new Error('Product not found.');
+    return { id: Number(productId), name: name.trim(), slug: slug.trim(), status };
   });
 }
