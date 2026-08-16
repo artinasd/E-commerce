@@ -43,7 +43,7 @@ export async function placeOrderFromCart(userId, addressId, { couponCode = null,
     }
 
     const basePricing = calculateOrderPricing(items);
-    const shippingMethod = await getShippingMethodById(shippingMethodId, address.province);
+    const shippingMethod = await getShippingMethodById(connection, shippingMethodId, address.province);
     const shippingAmount = calculateShippingAmount(shippingMethod, basePricing.subtotal);
     const promotion = couponCode
       ? await findApplicablePromotion(connection, { userId, code: couponCode, subtotal: basePricing.subtotal })
