@@ -16,6 +16,8 @@ const PRODUCT_SELECT = `
     b.name AS brand_name,
     b.slug AS brand_slug,
     (SELECT MIN(v.price) FROM product_variants v WHERE v.product_id = p.id AND v.is_active = TRUE) AS price,
+    (SELECT COALESCE(AVG(r.rating), 0) FROM reviews r WHERE r.product_id = p.id AND r.status = 'APPROVED') AS average_rating,
+    (SELECT COUNT(*) FROM reviews r WHERE r.product_id = p.id AND r.status = 'APPROVED') AS review_count,
     p.created_at,
     p.updated_at
   FROM products p
