@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { withTransaction } from '../connection.js';
 import { calculateOrderPricing } from '../../pricing/service.js';
+import { findApplicablePromotion, recordPromotionRedemption } from '../../pricing/promotions.js';
 
 const RESERVATION_MINUTES = 30;
 
@@ -8,7 +9,7 @@ function makeOrderNumber() {
   return `ORD-${Date.now().toString(36).toUpperCase()}-${randomUUID().slice(0, 8).toUpperCase()}`;
 }
 
-export async function placeOrderFromCart(userId, addressId) {
+export async function placeOrderFromCart(userId, addressId, { couponCode = null } = {}) {
   return withTransaction(async (connection) => {
     const [addressRows] = await connection.execute(
       `SELECT id, recipient_name, recipient_phone, province, city, address_line, postal_code
@@ -40,8 +41,13 @@ export async function placeOrderFromCart(userId, addressId) {
       }
     }
 
-    const pricing = calculateOrderPricing(items);
+    const basePricing = calculateOrderPricing(items);
+    const promotion = couponCode
+      ? await findApplicablePromotion(connection, { userId, code: couponCode, subtotal: basePricing.subtotal })
+      : null;
+    const pricing = calculateOrderPricing(items, { discountAmount: promotion?.discountAmount ?? 0 });
     const number = makeOrderNumber();
+
     const [orderResult] = await connection.execute(
       `INSERT INTO orders (
         user_id, order_number, status, payment_status, subtotal, discount_amount,
@@ -67,12 +73,23 @@ export async function placeOrderFromCart(userId, addressId) {
       if (reserved.affectedRows !== 1) throw new Error(`Inventory changed for ${item.product_name}. Please try again.`);
     }
 
+    if (promotion) {
+      await recordPromotionRedemption(connection, {
+        promotionId: promotion.id,
+        userId,
+        orderId: Number(orderResult.insertId),
+        discountAmount: promotion.discountAmount,
+      });
+    }
+
     await connection.execute(`DELETE FROM cart_items WHERE cart_id = ?`, [cartRows[0].id]);
 
     return {
       id: Number(orderResult.insertId),
       orderNumber: number,
       totalAmount: pricing.totalAmount,
+      discountAmount: pricing.discountAmount,
+      appliedPromotion: promotion ? { code: promotion.code, name: promotion.name } : null,
       reservationExpiresAt: new Date(Date.now() + RESERVATION_MINUTES * 60 * 1000),
     };
   });
