@@ -7,6 +7,12 @@ function positiveInt(value, fallback, max) {
   return Math.min(number, max);
 }
 
+function nonNegativeInt(value, fallback = undefined) {
+  if (value == null || value === '') return fallback;
+  const number = Number.parseInt(value, 10);
+  return Number.isFinite(number) && number >= 0 ? number : fallback;
+}
+
 export function parseProductQuery(searchParams) {
   const page = positiveInt(searchParams.get('page'), 1, 1000000);
   const limit = positiveInt(searchParams.get('limit'), 24, 100);
@@ -15,6 +21,9 @@ export function parseProductQuery(searchParams) {
   const brandSlug = searchParams.get('brand')?.trim().toLowerCase().slice(0, 160) || undefined;
   const requestedSort = searchParams.get('sort')?.trim().toLowerCase();
   const requestedDirection = searchParams.get('direction')?.trim().toLowerCase();
+  const minPrice = nonNegativeInt(searchParams.get('minPrice'));
+  const maxPrice = nonNegativeInt(searchParams.get('maxPrice'));
+  const inStock = ['1', 'true', 'yes'].includes((searchParams.get('inStock') || '').trim().toLowerCase());
 
   return {
     page,
@@ -22,6 +31,9 @@ export function parseProductQuery(searchParams) {
     search,
     categorySlug,
     brandSlug,
+    minPrice,
+    maxPrice,
+    inStock,
     sort: SORT_FIELDS.has(requestedSort) ? requestedSort : 'created_at',
     direction: SORT_DIRECTIONS.has(requestedDirection) ? requestedDirection : 'desc',
   };
