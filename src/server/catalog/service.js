@@ -1,5 +1,6 @@
 import {
   listProducts,
+  countProducts,
   findProductBySlug,
   findProductVariants,
   findProductImages,
@@ -10,15 +11,31 @@ import {
 } from '../db/repositories/catalog.js';
 
 export async function getProducts(params = {}) {
-  return listProducts({
-    page: params.page,
-    limit: params.limit,
+  const page = Math.max(Number(params.page) || 1, 1);
+  const limit = Math.min(Math.max(Number(params.limit) || 24, 1), 100);
+  const [category, brand] = await Promise.all([
+    params.categorySlug ? findCategoryBySlug(params.categorySlug) : null,
+    params.brandSlug ? findBrandBySlug(params.brandSlug) : null,
+  ]);
+  const filters = {
+    categoryId: category?.id ?? null,
+    brandId: brand?.id ?? null,
+    status: 'ACTIVE',
     search: params.search,
-    categorySlug: params.categorySlug,
-    brandSlug: params.brandSlug,
-    sort: params.sort,
-    direction: params.direction,
-  });
+  };
+  const [products, total] = await Promise.all([
+    listProducts({ ...filters, limit, offset: (page - 1) * limit, sort: params.sort, direction: params.direction }),
+    countProducts(filters),
+  ]);
+  return {
+    products,
+    pagination: {
+      page,
+      limit,
+      total,
+      hasMore: page * limit < total,
+    },
+  };
 }
 
 export async function getProductBySlug(slug) {
@@ -33,7 +50,7 @@ export async function getProductBySlug(slug) {
 }
 
 export async function getCategories(params = {}) {
-  return listCategories({ page: params.page, limit: params.limit });
+  return listCategories({ parentId: params.parentId ?? null, activeOnly: true });
 }
 
 export async function getCategoryBySlug(slug) {
@@ -42,7 +59,7 @@ export async function getCategoryBySlug(slug) {
 }
 
 export async function getBrands(params = {}) {
-  return listBrands({ page: params.page, limit: params.limit });
+  return listBrands({ limit: params.limit });
 }
 
 export async function getBrandBySlug(slug) {
