@@ -1,10 +1,10 @@
 import crypto from 'node:crypto';
 import { getOrCreateCart, listCartItems } from '../db/repositories/cart.js';
-import { createOrder, findOrderByIdForUser, listOrderItems, listOrdersForUser } from '../db/repositories/orders.js';
-import { query, withTransaction } from '../db/connection.js';
+import { findOrderByIdForUser, listOrderItems, listOrdersForUser } from '../db/repositories/orders.js';
+import { withTransaction } from '../db/connection.js';
 
 function money(value) {
-  return Number(Number(value).toFixed(2));
+  return Number(value);
 }
 
 function createOrderNumber() {
@@ -15,11 +15,17 @@ export async function listUserOrders(userId, params) {
   const orders = await listOrdersForUser(userId, params);
   return {
     orders: orders.map((order) => ({
-      ...order,
+      id: order.id,
+      orderNumber: order.order_number,
+      status: order.status,
+      paymentStatus: order.payment_status,
       subtotal: money(order.subtotal),
       discountAmount: money(order.discount_amount),
       shippingAmount: money(order.shipping_amount),
       totalAmount: money(order.total_amount),
+      placedAt: order.placed_at,
+      createdAt: order.created_at,
+      updatedAt: order.updated_at,
     })),
     pagination: {
       page: params.page,
@@ -35,14 +41,32 @@ export async function getUserOrder(userId, orderId) {
 
   const items = await listOrderItems(order.id);
   return {
-    ...order,
+    id: order.id,
+    orderNumber: order.order_number,
+    status: order.status,
+    paymentStatus: order.payment_status,
     subtotal: money(order.subtotal),
     discountAmount: money(order.discount_amount),
     shippingAmount: money(order.shipping_amount),
     totalAmount: money(order.total_amount),
+    shippingAddress: {
+      recipientName: order.shipping_recipient_name,
+      recipientPhone: order.shipping_recipient_phone,
+      province: order.shipping_province,
+      city: order.shipping_city,
+      addressLine: order.shipping_address,
+      postalCode: order.shipping_postal_code,
+    },
+    placedAt: order.placed_at,
+    createdAt: order.created_at,
+    updatedAt: order.updated_at,
     items: items.map((item) => ({
-      ...item,
+      id: item.id,
+      variantId: item.variant_id,
+      productName: item.product_name,
+      sku: item.sku,
       unitPrice: money(item.unit_price),
+      quantity: Number(item.quantity),
       discountAmount: money(item.discount_amount),
       lineTotal: money(item.line_total),
     })),
@@ -52,6 +76,7 @@ export async function getUserOrder(userId, orderId) {
 export async function checkout(userId, shipping) {
   const cart = await getOrCreateCart(userId);
   const items = await listCartItems(cart.id);
+
   if (!items.length) {
     const error = new Error('Your cart is empty.');
     error.code = 'EMPTY_CART';
@@ -60,33 +85,54 @@ export async function checkout(userId, shipping) {
 
   return withTransaction(async (connection) => {
     const lockedItems = [];
-    for (const item of items) {
-      const [rows] = await connection.execute(
-        `SELECT cv.id, cv.product_id, cv.sku, cv.name AS variant_name,
-                cv.price, cv.stock_quantity, cv.is_active,
-                p.name AS product_name
-           FROM product_variants cv
-           INNER JOIN products p ON p.id = cv.product_id
-          WHERE cv.id = ? AND p.deleted_at IS NULL
-          FOR UPDATE`,
+
+    // Lock inventory rows in deterministic variant-id order to reduce deadlock risk.
+    const sortedItems = [...items].sort((a, b) => Number(a.variant_id) - Number(b.variant_id));
+
+    for (const item of sortedItems) {
+      const [variantRows] = await connection.execute(
+        `SELECT v.id, v.product_id, v.sku, v.name AS variant_name, v.price,
+                v.is_active, p.name AS product_name
+           FROM product_variants v
+           INNER JOIN products p ON p.id = v.product_id
+          WHERE v.id = ? AND p.status = 'ACTIVE' AND p.deleted_at IS NULL
+          LIMIT 1`,
         [item.variant_id],
       );
 
-      const variant = rows[0];
+      const variant = variantRows[0];
       if (!variant || !variant.is_active) {
         const error = new Error(`Product variant ${item.variant_id} is unavailable.`);
         error.code = 'INVENTORY_UNAVAILABLE';
         throw error;
       }
-      if (Number(variant.stock_quantity) < Number(item.quantity)) {
-        const error = new Error(`Insufficient stock for ${variant.product_name ?? variant.product_name}.`);
+
+      const [inventoryRows] = await connection.execute(
+        `SELECT variant_id, quantity, reserved_quantity
+           FROM inventory
+          WHERE variant_id = ?
+          LIMIT 1
+          FOR UPDATE`,
+        [variant.id],
+      );
+
+      const inventory = inventoryRows[0];
+      const available = inventory
+        ? Number(inventory.quantity) - Number(inventory.reserved_quantity)
+        : 0;
+
+      if (!inventory || available < Number(item.quantity)) {
+        const error = new Error(`Insufficient stock for ${variant.product_name}.`);
         error.code = 'INSUFFICIENT_STOCK';
         throw error;
       }
+
       lockedItems.push({ variant, quantity: Number(item.quantity) });
     }
 
-    const subtotal = money(lockedItems.reduce((sum, item) => sum + Number(item.variant.price) * item.quantity, 0));
+    const subtotal = money(
+      lockedItems.reduce((sum, item) => sum + Number(item.variant.price) * item.quantity, 0),
+    );
     const shippingAmount = 0;
     const discountAmount = 0;
     const totalAmount = money(subtotal - discountAmount + shippingAmount);
@@ -100,9 +146,20 @@ export async function checkout(userId, shipping) {
         shipping_province, shipping_city, shipping_address,
         shipping_postal_code, placed_at
       ) VALUES (?, ?, 'PENDING', 'UNPAID', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
-      [userId, orderNumber, subtotal, discountAmount, shippingAmount, totalAmount,
-        shipping.recipientName, shipping.recipientPhone, shipping.province,
-        shipping.city, shipping.addressLine, shipping.postalCode],
+      [
+        userId,
+        orderNumber,
+        subtotal,
+        discountAmount,
+        shippingAmount,
+        totalAmount,
+        shipping.recipientName,
+        shipping.recipientPhone,
+        shipping.province,
+        shipping.city,
+        shipping.addressLine,
+        shipping.postalCode,
+      ],
     );
 
     for (const { variant, quantity } of lockedItems) {
@@ -118,9 +175,11 @@ export async function checkout(userId, shipping) {
       );
 
       const [stockResult] = await connection.execute(
-        `UPDATE product_variants
-            SET stock_quantity = stock_quantity - ?, updated_at = CURRENT_TIMESTAMP
-          WHERE id = ? AND stock_quantity >= ? AND is_active = TRUE`,
+        `UPDATE inventory
+            SET quantity = quantity - ?,
+                updated_at = CURRENT_TIMESTAMP
+          WHERE variant_id = ?
+            AND quantity - reserved_quantity >= ?`,
         [quantity, variant.id, quantity],
       );
 
@@ -131,10 +190,7 @@ export async function checkout(userId, shipping) {
       }
     }
 
-    await connection.execute(
-      `DELETE FROM cart_items WHERE cart_id = ?`,
-      [cart.id],
-    );
+    await connection.execute(`DELETE FROM cart_items WHERE cart_id = ?`, [cart.id]);
 
     return {
       id: Number(orderResult.insertId),
