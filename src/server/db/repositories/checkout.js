@@ -1,6 +1,8 @@
 import { randomUUID } from 'node:crypto';
 import { withTransaction } from '../connection.js';
 
+const RESERVATION_MINUTES = 30;
+
 function makeOrderNumber() {
   return `ORD-${Date.now().toString(36).toUpperCase()}-${randomUUID().slice(0, 8).toUpperCase()}`;
 }
@@ -15,10 +17,7 @@ export async function placeOrderFromCart(userId, addressId) {
     const address = addressRows[0];
     if (!address) throw new Error('Shipping address not found.');
 
-    const [cartRows] = await connection.execute(
-      `SELECT id FROM carts WHERE user_id = ? LIMIT 1 FOR UPDATE`,
-      [userId],
-    );
+    const [cartRows] = await connection.execute(`SELECT id FROM carts WHERE user_id = ? LIMIT 1 FOR UPDATE`, [userId]);
     if (!cartRows[0]) throw new Error('Your cart is empty.');
 
     const [items] = await connection.execute(
@@ -29,8 +28,7 @@ export async function placeOrderFromCart(userId, addressId) {
          INNER JOIN product_variants v ON v.id = ci.variant_id AND v.is_active = TRUE
          INNER JOIN products p ON p.id = v.product_id AND p.status = 'ACTIVE' AND p.deleted_at IS NULL
          LEFT JOIN inventory i ON i.variant_id = v.id
-        WHERE ci.cart_id = ?
-        FOR UPDATE`,
+        WHERE ci.cart_id = ? FOR UPDATE`,
       [cartRows[0].id],
     );
     if (!items.length) throw new Error('Your cart is empty.');
@@ -49,9 +47,10 @@ export async function placeOrderFromCart(userId, addressId) {
       `INSERT INTO orders (
         user_id, order_number, status, payment_status, subtotal, discount_amount,
         shipping_amount, total_amount, shipping_recipient_name, shipping_recipient_phone,
-        shipping_province, shipping_city, shipping_address, shipping_postal_code, placed_at
-      ) VALUES (?, ?, 'PENDING', 'UNPAID', ?, 0, 0, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
-      [userId, number, subtotal, subtotal, address.recipient_name, address.recipient_phone, address.province, address.city, address.address_line, address.postal_code],
+        shipping_province, shipping_city, shipping_address, shipping_postal_code,
+        placed_at, reservation_expires_at
+      ) VALUES (?, ?, 'PENDING', 'UNPAID', ?, 0, 0, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, DATE_ADD(CURRENT_TIMESTAMP, INTERVAL ? MINUTE))`,
+      [userId, number, subtotal, subtotal, address.recipient_name, address.recipient_phone, address.province, address.city, address.address_line, address.postal_code, RESERVATION_MINUTES],
     );
 
     for (const item of items) {
@@ -63,8 +62,7 @@ export async function placeOrderFromCart(userId, addressId) {
       );
 
       const [reserved] = await connection.execute(
-        `UPDATE inventory
-            SET reserved_quantity = reserved_quantity + ?
+        `UPDATE inventory SET reserved_quantity = reserved_quantity + ?
           WHERE variant_id = ? AND quantity - reserved_quantity >= ?`,
         [item.quantity, item.variant_id, item.quantity],
       );
@@ -73,6 +71,11 @@ export async function placeOrderFromCart(userId, addressId) {
 
     await connection.execute(`DELETE FROM cart_items WHERE cart_id = ?`, [cartRows[0].id]);
 
-    return { id: Number(orderResult.insertId), orderNumber: number, totalAmount: subtotal };
+    return {
+      id: Number(orderResult.insertId),
+      orderNumber: number,
+      totalAmount: subtotal,
+      reservationExpiresAt: new Date(Date.now() + RESERVATION_MINUTES * 60 * 1000),
+    };
   });
 }
