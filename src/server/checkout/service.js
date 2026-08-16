@@ -5,5 +5,7 @@ export async function checkoutFromCart(userId, payload) {
   if (!Number.isSafeInteger(addressId) || addressId < 1) {
     throw new Error('A valid shipping address is required.');
   }
-  return placeOrderFromCart(userId, addressId);
+  const couponCode = typeof payload?.couponCode === 'string' ? payload.couponCode.trim() : '';
+  if (couponCode.length > 64) throw new Error('Promotion code is too long.');
+  return placeOrderFromCart(userId, addressId, { couponCode: couponCode || null });
 }
