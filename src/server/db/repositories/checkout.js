@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { withTransaction } from '../connection.js';
 import { calculateOrderPricing } from '../../pricing/service.js';
 import { findApplicablePromotion, recordPromotionRedemption } from '../../pricing/promotions.js';
+import { getShippingMethodById, calculateShippingAmount } from '../../pricing/shipping.js';
 
 const RESERVATION_MINUTES = 30;
 
@@ -9,7 +10,7 @@ function makeOrderNumber() {
   return `ORD-${Date.now().toString(36).toUpperCase()}-${randomUUID().slice(0, 8).toUpperCase()}`;
 }
 
-export async function placeOrderFromCart(userId, addressId, { couponCode = null } = {}) {
+export async function placeOrderFromCart(userId, addressId, { couponCode = null, shippingMethodId }) {
   return withTransaction(async (connection) => {
     const [addressRows] = await connection.execute(
       `SELECT id, recipient_name, recipient_phone, province, city, address_line, postal_code
@@ -42,20 +43,31 @@ export async function placeOrderFromCart(userId, addressId, { couponCode = null 
     }
 
     const basePricing = calculateOrderPricing(items);
+    const shippingMethod = await getShippingMethodById(shippingMethodId, address.province);
+    const shippingAmount = calculateShippingAmount(shippingMethod, basePricing.subtotal);
     const promotion = couponCode
       ? await findApplicablePromotion(connection, { userId, code: couponCode, subtotal: basePricing.subtotal })
       : null;
-    const pricing = calculateOrderPricing(items, { discountAmount: promotion?.discountAmount ?? 0 });
+    const pricing = calculateOrderPricing(items, {
+      discountAmount: promotion?.discountAmount ?? 0,
+      shippingAmount,
+    });
     const number = makeOrderNumber();
 
     const [orderResult] = await connection.execute(
       `INSERT INTO orders (
         user_id, order_number, status, payment_status, subtotal, discount_amount,
-        shipping_amount, total_amount, shipping_recipient_name, shipping_recipient_phone,
-        shipping_province, shipping_city, shipping_address, shipping_postal_code,
+        shipping_amount, shipping_method_id, shipping_method_name, total_amount,
+        shipping_recipient_name, shipping_recipient_phone, shipping_province,
+        shipping_city, shipping_address, shipping_postal_code,
         placed_at, reservation_expires_at
-      ) VALUES (?, ?, 'PENDING', 'UNPAID', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, DATE_ADD(CURRENT_TIMESTAMP, INTERVAL ? MINUTE))`,
-      [userId, number, pricing.subtotal, pricing.discountAmount, pricing.shippingAmount, pricing.totalAmount, address.recipient_name, address.recipient_phone, address.province, address.city, address.address_line, address.postal_code, RESERVATION_MINUTES],
+      ) VALUES (?, ?, 'PENDING', 'UNPAID', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, DATE_ADD(CURRENT_TIMESTAMP, INTERVAL ? MINUTE))`,
+      [
+        userId, number, pricing.subtotal, pricing.discountAmount, pricing.shippingAmount,
+        shippingMethod.id, shippingMethod.name, pricing.totalAmount,
+        address.recipient_name, address.recipient_phone, address.province, address.city,
+        address.address_line, address.postal_code, RESERVATION_MINUTES,
+      ],
     );
 
     for (const item of pricing.items) {
@@ -87,8 +99,11 @@ export async function placeOrderFromCart(userId, addressId, { couponCode = null 
     return {
       id: Number(orderResult.insertId),
       orderNumber: number,
-      totalAmount: pricing.totalAmount,
+      subtotal: pricing.subtotal,
       discountAmount: pricing.discountAmount,
+      shippingAmount: pricing.shippingAmount,
+      totalAmount: pricing.totalAmount,
+      shippingMethod: { id: shippingMethod.id, name: shippingMethod.name },
       appliedPromotion: promotion ? { code: promotion.code, name: promotion.name } : null,
       reservationExpiresAt: new Date(Date.now() + RESERVATION_MINUTES * 60 * 1000),
     };
