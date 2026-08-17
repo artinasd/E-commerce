@@ -15,9 +15,11 @@ export default function NewProductPage() {
     event.preventDefault(); setSaving(true); setMessage('');
     try {
       const response = await fetch('/api/admin/products/create', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(form) });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data?.error?.message || 'خطا در ایجاد محصول');
-      setProductId(Number(data.product.id));
+      const json = await response.json();
+      if (!response.ok) throw new Error(json?.error?.message || 'خطا در ایجاد محصول');
+      const product = json?.data?.product;
+      if (!product?.id) throw new Error('محصول ایجاد شد اما شناسه آن از سرور دریافت نشد.');
+      setProductId(Number(product.id));
       setMessage('محصول ایجاد شد. حالا می‌توانید تصاویر آن را انتخاب کنید.');
     } catch (error) { setMessage(error.message); } finally { setSaving(false); }
   }
@@ -36,7 +38,6 @@ export default function NewProductPage() {
       {!productId && <button disabled={saving} className="w-fit rounded-xl bg-slate-950 px-5 py-3 font-bold text-white disabled:opacity-50">{saving ? 'در حال ذخیره…' : 'ایجاد محصول'}</button>}
       {productId && <Link href={`/admin/products/${productId}`} className="w-fit rounded-xl border px-5 py-3 text-sm font-bold">ویرایش کامل محصول</Link>}
     </form>
-
     {productId && <ProductImageManager productId={productId} images={images} onChange={setImages} />}
   </section>;
 }
