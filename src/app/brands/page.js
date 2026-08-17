@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { getBrands } from '../../server/catalog/service.js';
 
 export const metadata = { title: 'برندها' };
+export const dynamic = 'force-dynamic';
 
 export default async function BrandsPage() {
   const brands = await getBrands({ limit: 250 });
