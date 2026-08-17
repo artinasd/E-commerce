@@ -2,26 +2,32 @@ import Link from 'next/link';
 
 export default function Footer() {
   return (
-    <footer className="mt-16 border-t border-[var(--border)] bg-white">
-      <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:px-6 md:grid-cols-3 lg:px-8">
+    <footer className="mt-16 border-t border-[var(--border)] bg-[#181818] text-white">
+      <div className="store-shell grid gap-10 py-12 sm:grid-cols-2 lg:grid-cols-[1.5fr_1fr_1fr]">
         <div>
-          <p className="text-lg font-black text-[var(--brand)]">فروشگاه</p>
-          <p className="mt-2 max-w-sm text-sm leading-7 text-slate-500">خرید آنلاین سریع، ساده و مطمئن با تجربه‌ای مدرن برای کاربران ایرانی.</p>
+          <div className="flex items-center gap-2">
+            <span className="grid h-10 w-10 place-items-center bg-[var(--brand)] text-lg font-black">ف</span>
+            <p className="text-lg font-black">فروشگاه</p>
+          </div>
+          <p className="mt-5 max-w-md text-sm leading-8 text-white/55">یک تجربه خرید فارسی، سریع و خلوت؛ با تمرکز روی پیدا کردن محصول مناسب و خریدی بدون اصطکاک.</p>
         </div>
         <div>
-          <h2 className="text-sm font-bold text-slate-900">دسترسی سریع</h2>
-          <div className="mt-3 grid gap-2 text-sm text-slate-500">
-            <Link href="/products" className="hover:text-[var(--brand)]">همه محصولات</Link>
-            <Link href="/categories" className="hover:text-[var(--brand)]">دسته‌بندی‌ها</Link>
-            <Link href="/account" className="hover:text-[var(--brand)]">حساب کاربری</Link>
+          <h2 className="text-sm font-bold">دسترسی سریع</h2>
+          <div className="mt-4 grid gap-3 text-sm text-white/55">
+            <Link href="/products" className="hover:text-white">همه محصولات</Link>
+            <Link href="/categories" className="hover:text-white">دسته‌بندی‌ها</Link>
+            <Link href="/brands" className="hover:text-white">برندها</Link>
+            <Link href="/account" className="hover:text-white">حساب کاربری</Link>
           </div>
         </div>
         <div>
-          <h2 className="text-sm font-bold text-slate-900">خدمات مشتریان</h2>
-          <p className="mt-3 text-sm leading-7 text-slate-500">پشتیبانی و پیگیری سفارش‌ها از طریق حساب کاربری.</p>
+          <h2 className="text-sm font-bold">خدمات مشتریان</h2>
+          <p className="mt-4 text-sm leading-8 text-white/55">پیگیری سفارش، مدیریت آدرس‌ها و مشاهده سابقه خرید از داخل حساب کاربری.</p>
         </div>
       </div>
-      <div className="border-t border-[var(--border)] px-4 py-5 text-center text-xs text-slate-400">تمامی حقوق محفوظ است.</div>
+      <div className="border-t border-white/10">
+        <div className="store-shell py-5 text-xs text-white/35">تمامی حقوق محفوظ است.</div>
+      </div>
     </footer>
   );
 }
