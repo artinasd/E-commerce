@@ -26,10 +26,12 @@ export async function createSession(userId) {
   const tokenHash = hashSessionToken(token);
   const expiresAt = new Date(Date.now() + SESSION_TTL_MS);
 
+  // The initial schema stores the session identifier in `sessions.id`.
+  // Store the SHA-256 token hash there rather than requiring a schema change.
   await query(
-    `INSERT INTO sessions (user_id, token_hash, expires_at)
+    `INSERT INTO sessions (id, user_id, expires_at)
      VALUES (?, ?, ?)`,
-    [userId, tokenHash, expiresAt],
+    [tokenHash, userId, expiresAt],
   );
 
   return { token, expiresAt };
@@ -45,9 +47,8 @@ export async function findUserBySessionToken(token) {
             s.id AS session_id, s.expires_at
        FROM sessions s
        INNER JOIN users u ON u.id = s.user_id
-      WHERE s.token_hash = ?
+      WHERE s.id = ?
         AND s.expires_at > CURRENT_TIMESTAMP
-        AND s.revoked_at IS NULL
         AND u.deleted_at IS NULL
         AND u.is_active = TRUE
       LIMIT 1`,
@@ -62,9 +63,8 @@ export async function revokeSession(token) {
 
   const tokenHash = hashSessionToken(token);
   const result = await query(
-    `UPDATE sessions
-        SET revoked_at = CURRENT_TIMESTAMP
-      WHERE token_hash = ? AND revoked_at IS NULL`,
+    `DELETE FROM sessions
+      WHERE id = ?`,
     [tokenHash],
   );
 
@@ -73,9 +73,8 @@ export async function revokeSession(token) {
 
 export async function revokeAllUserSessions(userId) {
   const result = await query(
-    `UPDATE sessions
-        SET revoked_at = CURRENT_TIMESTAMP
-      WHERE user_id = ? AND revoked_at IS NULL`,
+    `DELETE FROM sessions
+      WHERE user_id = ?`,
     [userId],
   );
 
@@ -104,9 +103,9 @@ export async function createUserWithSession(user, passwordHash) {
     const expiresAt = new Date(Date.now() + SESSION_TTL_MS);
 
     await connection.execute(
-      `INSERT INTO sessions (user_id, token_hash, expires_at)
+      `INSERT INTO sessions (id, user_id, expires_at)
        VALUES (?, ?, ?)`,
-      [userResult.insertId, tokenHash, expiresAt],
+      [tokenHash, userResult.insertId, expiresAt],
     );
 
     return { userId: Number(userResult.insertId), token, expiresAt };
