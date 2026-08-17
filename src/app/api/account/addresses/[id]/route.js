@@ -1,7 +1,7 @@
 import { requireUser } from '../../../../../lib/auth/session.js';
 import { deleteAddress, updateAddress } from '../../../../../server/account/service.js';
-import { validateAddress, validateAddressId } from '../../../../../server/account/validation.js';
-import { apiErrorResponse, apiSuccess } from '../../../../../server/api/errors.js';
+import { validateAddressInput, validateAddressId } from '../../../../../server/account/validation.js';
+import { apiErrorResponse, apiSuccess } from '../../../../../server/api/response.js';
 
 export async function PATCH(request, { params }) {
   try {
@@ -9,7 +9,7 @@ export async function PATCH(request, { params }) {
     const { id } = await params;
     const addressId = validateAddressId(id);
     const body = await request.json();
-    const address = validateAddress(body);
+    const address = validateAddressInput(body);
     const updated = await updateAddress(user.id, addressId, address);
     if (!updated) return apiSuccess({ address: null }, 404);
     return apiSuccess({ updated: true });
