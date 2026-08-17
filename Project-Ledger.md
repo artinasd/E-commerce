@@ -6,10 +6,10 @@ Iranian Persian E-Commerce Platform
 Production-oriented Persian RTL e-commerce for Iranian customers. Direction: lighter, faster, cleaner and more modern than conventional marketplace UX, inspired by leading Iranian marketplaces without copying them.
 
 ## Current Version
-0.9.0 — Storefront discovery + purchase journey + favorites foundation
+0.9.1 — Production build hardening
 
 ## Current Development Phase
-Phase 7 — Customer storefront and purchase journey
+Phase 7 — Customer storefront and purchase journey / production hardening
 
 ## Repository
 `artinasd/E-commerce` — branch `main`
@@ -177,9 +177,19 @@ Favorites are customer-scoped and backed by the existing `favorites` table.
 - Loading/error/empty-state polish and accessibility need a final pass.
 
 ## Admin
-Admin/CMS remains to be audited and implemented where genuinely missing.
+Admin/CMS remains to be audited and implemented where genuinely missing. The existing admin review/catalog/inventory/order services are now kept compatible with the current route contracts.
+
+## Production Hardening Completed In This Milestone
+- Restored admin review service compatibility exports used by the existing admin UI/routes.
+- Restored address repository mutation exports required by the canonical address service.
+- Corrected account API routes to use the canonical API response helper and current validation function names.
+- Corrected `/api/orders` POST to use the canonical transactional cart checkout service rather than a removed legacy checkout export.
+- Aligned the disabled payment provider with the provider-factory abstraction; no real gateway is introduced.
+- Replaced mock-payment `window.location.assign()` with Next.js router navigation.
+- Confirmed the canonical source tree is under `src/app` and `src/server`; stale root `app/` routes were removed in the preceding cleanup milestone.
 
 ## Production Hardening Remaining
+- Run a fresh local install/build from the latest `origin/main` checkout and address any newly surfaced errors.
 - Automated tests
 - Full end-to-end checkout tests
 - Payment gateway adapter + callback verification when credentials/provider are supplied
@@ -189,6 +199,12 @@ Admin/CMS remains to be audited and implemented where genuinely missing.
 - Production deployment verification
 
 ## Recent Commits
+- Production build hardening: admin review compatibility
+- Production build hardening: address repository mutations
+- Production build hardening: account API response/validation imports
+- Production build hardening: canonical order checkout service
+- Production build hardening: disabled payment provider abstraction
+- Production build hardening: mock payment navigation
 - Product discovery price/stock filters
 - Favorites repository/service/API/UI
 - Public categories page
