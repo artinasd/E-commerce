@@ -1,8 +1,10 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function FavoriteButton({ productId, initialFavorite = false, className = '' }) {
+  const router = useRouter();
   const [isFavorite, setIsFavorite] = useState(initialFavorite);
   const [busy, setBusy] = useState(false);
 
@@ -14,7 +16,7 @@ export default function FavoriteButton({ productId, initialFavorite = false, cla
     try {
       const response = await fetch(`/api/favorites/${productId}`, { method: 'POST' });
       if (response.status === 401) {
-        window.location.href = `/login?next=${encodeURIComponent(window.location.pathname)}`;
+        router.push(`/login?next=${encodeURIComponent(window.location.pathname)}`);
         return;
       }
       if (!response.ok) throw new Error('favorite update failed');
