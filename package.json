@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "db:seed-admin": "node --env-file=.env scripts/seed-admin.js"
   },
   "dependencies": {
     "mysql2": "^3.14.4",
