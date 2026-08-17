@@ -1,14 +1,18 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800;900&display=swap');
 
 :root {
-  --background: #f6f7f9;
-  --foreground: #16181d;
+  --background: #f8f8f6;
+  --foreground: #171717;
   --surface: #ffffff;
-  --muted: #69707d;
-  --border: #e5e7eb;
-  --brand: #e53950;
-  --brand-strong: #c92d43;
-  --content-width: 1280px;
+  --surface-soft: #f3f3f0;
+  --muted: #737373;
+  --border: #e7e5e0;
+  --brand: #e11d48;
+  --brand-strong: #be123c;
+  --brand-soft: #fff1f2;
+  --ink-soft: #404040;
+  --content-width: 1320px;
 }
 
 * { box-sizing: border-box; }
@@ -26,22 +30,35 @@ body {
   margin: 0;
   background: var(--background);
   color: var(--foreground);
-  font-family: Tahoma, Arial, sans-serif;
+  font-family: 'Vazirmatn', Tahoma, Arial, sans-serif;
+  font-weight: 400;
 }
 
 button, input, textarea, select { font: inherit; }
 button, a { -webkit-tap-highlight-color: transparent; }
 a { color: inherit; text-decoration: none; }
 img { max-width: 100%; }
+::placeholder { color: #a3a3a3; }
 
 :focus-visible {
-  outline: 3px solid color-mix(in srgb, var(--brand) 35%, transparent);
-  outline-offset: 2px;
+  outline: 3px solid color-mix(in srgb, var(--brand) 28%, transparent);
+  outline-offset: 3px;
 }
 
-::selection { background: color-mix(in srgb, var(--brand) 18%, transparent); }
+::selection { background: #ffe4e8; color: #881337; }
+
+.store-shell { width: min(100% - 32px, var(--content-width)); margin-inline: auto; }
+.soft-shadow { box-shadow: 0 14px 45px rgba(23, 23, 23, 0.07); }
+
+@media (max-width: 640px) {
+  .store-shell { width: min(100% - 20px, var(--content-width)); }
+}
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
-  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
