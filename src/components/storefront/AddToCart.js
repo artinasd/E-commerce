@@ -1,8 +1,11 @@
 'use client';
 
 import { useState } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 
 export default function AddToCart({ variants }) {
+  const router = useRouter();
+  const pathname = usePathname();
   const available = variants.filter((variant) => Number(variant.available_quantity) > 0);
   const [variantId, setVariantId] = useState(available[0]?.id ?? null);
   const [quantity, setQuantity] = useState(1);
@@ -19,7 +22,7 @@ export default function AddToCart({ variants }) {
         body: JSON.stringify({ variantId: selected.id, quantity }),
       });
       if (response.status === 401) {
-        window.location.href = `/login?returnTo=${encodeURIComponent(window.location.pathname)}`;
+        router.push(`/login?returnTo=${encodeURIComponent(pathname || '/')}`);
         return;
       }
       if (!response.ok) throw new Error();
