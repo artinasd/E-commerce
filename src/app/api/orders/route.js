@@ -1,7 +1,8 @@
 import { requireUser } from '../../../lib/auth/session.js';
 import { apiErrorResponse, apiSuccess } from '../../../server/api/response.js';
-import { checkout, listUserOrders } from '../../../server/orders/service.js';
-import { parseOrderQuery, validateShippingAddress } from '../../../server/orders/validation.js';
+import { checkoutFromCart } from '../../../server/checkout/service.js';
+import { listUserOrders } from '../../../server/orders/service.js';
+import { parseOrderQuery } from '../../../server/orders/validation.js';
 
 export async function GET(request) {
   try {
@@ -16,9 +17,8 @@ export async function GET(request) {
 export async function POST(request) {
   try {
     const user = await requireUser();
-    const body = await request.json();
-    const shipping = validateShippingAddress(body.shippingAddress);
-    return apiSuccess({ order: await checkout(user.id, shipping) }, 201);
+    const payload = await request.json();
+    return apiSuccess({ order: await checkoutFromCart(user.id, payload) }, 201);
   } catch (error) {
     return apiErrorResponse(error, 'Unable to create the order.');
   }
