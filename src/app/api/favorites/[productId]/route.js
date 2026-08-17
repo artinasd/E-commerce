@@ -1,6 +1,6 @@
-import { requireUser } from '../../../../../lib/auth/session.js';
-import { apiErrorResponse, apiSuccess } from '../../../../../server/api/response.js';
-import { getFavoriteState, toggleFavorite } from '../../../../../server/favorites/service.js';
+import { requireUser } from '../../../../lib/auth/session.js';
+import { apiErrorResponse, apiSuccess } from '../../../../server/api/response.js';
+import { getFavoriteState, toggleFavorite } from '../../../../server/favorites/service.js';
 
 export async function GET(_request, { params }) {
   try {

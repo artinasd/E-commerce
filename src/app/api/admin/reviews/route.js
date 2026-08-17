@@ -1,6 +1,6 @@
-import { requireRole } from '../../../../../lib/auth/session.js';
-import { apiErrorResponse, apiSuccess } from '../../../../../server/api/response.js';
-import { listReviewsForModeration } from '../../../../../server/admin/reviews.js';
+import { requireRole } from '../../../../lib/auth/session.js';
+import { apiErrorResponse, apiSuccess } from '../../../../server/api/response.js';
+import { listReviewsForModeration } from '../../../../server/admin/reviews.js';
 
 export async function GET(request) {
   try {

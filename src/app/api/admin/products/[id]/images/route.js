@@ -1,5 +1,5 @@
-import { addProductImage } from '../../../../../../../server/admin/images.js';
-import { apiErrorResponse, apiSuccess } from '../../../../../../../server/api/response.js';
+import { addProductImage } from '../../../../../../server/admin/images.js';
+import { apiErrorResponse, apiSuccess } from '../../../../../../server/api/response.js';
 
 export async function POST(request, { params }) {
   try { const body = await request.json(); return apiSuccess({ image: await addProductImage({ productId: Number(params.id), ...body }) }, 201); }

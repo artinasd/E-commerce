@@ -1,5 +1,5 @@
-import { listAdminProducts } from '../../../../../server/admin/products.js';
-import { apiErrorResponse, apiSuccess } from '../../../../../server/api/response.js';
+import { listAdminProducts } from '../../../../server/admin/products.js';
+import { apiErrorResponse, apiSuccess } from '../../../../server/api/response.js';
 
 export async function GET(request) {
   try {

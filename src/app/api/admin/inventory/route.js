@@ -1,6 +1,6 @@
-import { requireRole } from '../../../../../lib/auth/session.js';
-import { listAdminInventory } from '../../../../../server/admin/inventory.js';
-import { apiErrorResponse, apiSuccess } from '../../../../../server/api/response.js';
+import { requireRole } from '../../../../lib/auth/session.js';
+import { listAdminInventory } from '../../../../server/admin/inventory.js';
+import { apiErrorResponse, apiSuccess } from '../../../../server/api/response.js';
 
 export async function GET(request) {
   try {

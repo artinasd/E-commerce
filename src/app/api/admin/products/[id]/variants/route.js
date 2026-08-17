@@ -1,5 +1,5 @@
-import { createVariant } from '../../../../../../../server/admin/variants.js';
-import { apiErrorResponse, apiSuccess } from '../../../../../../../server/api/response.js';
+import { createVariant } from '../../../../../../server/admin/variants.js';
+import { apiErrorResponse, apiSuccess } from '../../../../../../server/api/response.js';
 
 export async function POST(request, { params }) {
   try {

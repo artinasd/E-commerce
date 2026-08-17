@@ -1,6 +1,6 @@
-import { requireRole } from '../../../../../../lib/auth/session.js';
-import { apiErrorResponse, apiSuccess } from '../../../../../../server/api/response.js';
-import { findReviewForModeration, setReviewModerationStatus } from '../../../../../../server/admin/reviews.js';
+import { requireRole } from '../../../../../lib/auth/session.js';
+import { apiErrorResponse, apiSuccess } from '../../../../../server/api/response.js';
+import { findReviewForModeration, setReviewModerationStatus } from '../../../../../server/admin/reviews.js';
 
 const ALLOWED_STATUSES = new Set(['APPROVED', 'REJECTED']);
 

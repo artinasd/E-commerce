@@ -1,6 +1,6 @@
-import { requireUser } from '../../../../../lib/auth/session.js';
-import { apiErrorResponse, apiSuccess } from '../../../../../server/api/response.js';
-import { listActiveShippingMethods } from '../../../../../server/shipping/service.js';
+import { requireUser } from '../../../../lib/auth/session.js';
+import { apiErrorResponse, apiSuccess } from '../../../../server/api/response.js';
+import { listActiveShippingMethods } from '../../../../server/shipping/service.js';
 
 export async function GET(request) {
   try {
