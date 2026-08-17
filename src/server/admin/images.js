@@ -19,6 +19,31 @@ export async function addProductImage({ productId, variantId = null, url, altTex
   });
 }
 
+export async function updateProductImage(imageId, { sortOrder, isPrimary }) {
+  await admin();
+  return withTransaction(async (connection) => {
+    const [images] = await connection.execute('SELECT id, product_id, variant_id, url, alt_text, sort_order, is_primary FROM product_images WHERE id = ? LIMIT 1', [imageId]);
+    const image = images[0];
+    if (!image) throw new Error('Image not found.');
+
+    if (isPrimary === true) await connection.execute('UPDATE product_images SET is_primary = 0 WHERE product_id = ?', [image.product_id]);
+
+    const nextSortOrder = sortOrder === undefined ? image.sort_order : Math.max(Number(sortOrder) || 0, 0);
+    const nextPrimary = isPrimary === undefined ? Boolean(image.is_primary) : Boolean(isPrimary);
+    await connection.execute('UPDATE product_images SET sort_order = ?, is_primary = ? WHERE id = ?', [nextSortOrder, nextPrimary, imageId]);
+
+    return {
+      id: Number(image.id),
+      productId: Number(image.product_id),
+      variantId: image.variant_id ? Number(image.variant_id) : null,
+      url: image.url,
+      altText: image.alt_text,
+      sortOrder: nextSortOrder,
+      isPrimary: nextPrimary,
+    };
+  });
+}
+
 export async function deleteProductImage(imageId) {
   await admin();
   return withTransaction(async (connection) => {
