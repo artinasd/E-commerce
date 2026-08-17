@@ -1,7 +1,7 @@
 import { requireUser } from '../../../../lib/auth/session.js';
 import { createAddress, listAddresses } from '../../../../server/account/service.js';
 import { validateAddressInput } from '../../../../server/account/validation.js';
-import { apiErrorResponse, apiSuccess } from '../../../../server/api/errors.js';
+import { apiErrorResponse, apiSuccess } from '../../../../server/api/response.js';
 
 export async function GET() {
   try {
