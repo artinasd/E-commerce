@@ -21,7 +21,19 @@ export default async function AccountPage() {
       [user.id],
     ),
     query(
-      `SELECT f.product_id,p.name,p.slug,p.thumbnail_url FROM favorites f INNER JOIN products p ON p.id=f.product_id AND p.deleted_at IS NULL WHERE f.user_id=? ORDER BY f.created_at DESC LIMIT 8`,
+      `SELECT f.product_id,
+              p.name,
+              p.slug,
+              (SELECT pi.url
+                 FROM product_images pi
+                WHERE pi.product_id = p.id
+                ORDER BY pi.is_primary DESC, pi.sort_order ASC, pi.id ASC
+                LIMIT 1) AS thumbnail_url
+         FROM favorites f
+         INNER JOIN products p ON p.id=f.product_id AND p.deleted_at IS NULL
+        WHERE f.user_id=?
+        ORDER BY f.created_at DESC
+        LIMIT 8`,
       [user.id],
     ),
   ]);
