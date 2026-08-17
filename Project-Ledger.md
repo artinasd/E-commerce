@@ -6,7 +6,7 @@ Iranian Persian E-Commerce Platform
 Production-oriented Persian RTL e-commerce for Iranian customers. Direction: lighter, faster, cleaner and more modern than conventional marketplace UX, inspired by leading Iranian marketplaces without copying them.
 
 ## Current Version
-0.9.1 — Production build hardening
+0.9.2 — Storefront engagement and catalog controls
 
 ## Current Development Phase
 Phase 7 — Customer storefront and purchase journey / production hardening
@@ -30,54 +30,6 @@ Backend: `Route Handler → authentication/validation → service → repository
 Frontend: Server Components for data-heavy pages; Client Components only for interactive state/actions.
 The client is never authoritative for pricing, inventory, cart persistence, authentication, checkout, or order creation.
 
-## Canonical Structure
-```text
-src/
-├── app/
-│   ├── api/
-│   │   ├── account/
-│   │   ├── addresses/
-│   │   ├── auth/
-│   │   ├── brands/
-│   │   ├── cart/
-│   │   ├── categories/
-│   │   ├── checkout/
-│   │   ├── favorites/
-│   │   ├── orders/
-│   │   ├── payments/
-│   │   ├── products/
-│   │   └── shipping/
-│   ├── brands/page.js
-│   ├── categories/page.js
-│   ├── favorites/page.js
-│   ├── products/page.js
-│   ├── products/[slug]/page.js
-│   ├── cart/
-│   ├── checkout/
-│   ├── orders/[id]/
-│   └── page.js
-├── components/storefront/
-│   ├── Header.js
-│   ├── Footer.js
-│   ├── ProductCard.js
-│   ├── HomeSections.js
-│   ├── AddToCart.js
-│   ├── CheckoutForm.js
-│   └── FavoriteButton.js
-├── lib/auth/
-└── server/
-    ├── account/
-    ├── address/
-    ├── auth/
-    ├── catalog/
-    ├── cart/
-    ├── checkout/
-    ├── favorites/
-    ├── orders/
-    ├── payments/
-    └── db/repositories/
-```
-
 ## Database
 `database/migrations/001_initial_schema.sql` defines users, sessions, categories, brands, products, product_variants, attributes, attribute_values, product_attributes, product_images, inventory, addresses, carts, cart_items, orders, order_items, payments, coupons, order_coupons, favorites, reviews and audit_logs.
 
@@ -89,6 +41,7 @@ Important rules:
 - Orders store historical shipping/product/price snapshots.
 - Favorites are unique per `(user_id, product_id)`.
 - Reviews support 1–5 ratings and moderation states.
+- Product discounts use `product_variants.compare_at_price` as the original price and `product_variants.price` as the current sale price.
 
 ## Authentication / Authorization
 - HTTP-only `ecom_session` cookie.
@@ -114,40 +67,31 @@ Important rules:
 `GET /api/brands`
 `GET /api/brands/[slug]`
 
-Product discovery supports search, category, brand, pagination, sorting, minimum price, maximum price and in-stock filtering.
-
-### Cart
-`GET /api/cart`
-`POST /api/cart/items`
-`PATCH /api/cart/items/[itemId]`
-`DELETE /api/cart/items/[itemId]`
-
-### Addresses
-`GET /api/addresses`
-`POST /api/addresses`
-`GET /api/addresses/[id]`
-`PATCH /api/addresses/[id]`
-`DELETE /api/addresses/[id]`
-`POST /api/addresses/[id]/default`
-
-### Checkout / Shipping
-`POST /api/checkout`
-`GET /api/shipping/methods`
-
-Checkout is transactional and server-side. Inventory is revalidated and reserved during order creation. Shipping uses the canonical shipping-method/pricing model.
-
-### Orders
-Customer-scoped order retrieval/list architecture exists. `/api/orders/[id]` only exposes the authenticated customer's order.
-
-### Payments
-Payment records and provider abstraction exist. No gateway is configured yet by design. When no provider is configured, the system does not fake success; it returns a controlled payment-unavailable state. Gateway adapters can be added later without redesigning orders/checkout.
+Product discovery supports search, category, brand, pagination, sorting, minimum price, maximum price and in-stock filtering. Storefront product results now expose the active variant's compare-at price for discount presentation.
 
 ### Favorites
 `GET /api/favorites`
 `GET /api/favorites/[productId]`
 `POST /api/favorites/[productId]`
 
-Favorites are customer-scoped and backed by the existing `favorites` table.
+Favorite controls now appear on product cards as well as product detail pages, load the existing favorite state for authenticated customers, and redirect unauthenticated users to login.
+
+### Reviews
+`GET /api/products/[slug]/reviews`
+`POST /api/products/[slug]/reviews`
+`GET /api/products/[slug]/reviews/eligible`
+
+Customers can rate and review delivered, paid purchases. The server verifies purchase eligibility and prevents duplicate reviews for the same purchased order item. New reviews enter the existing admin moderation queue as `PENDING`.
+
+### Admin Catalog
+`GET /api/admin/catalog/options`
+`POST /api/admin/products/create`
+`PATCH /api/admin/products/[id]`
+`DELETE /api/admin/products/[id]`
+`POST /api/admin/products/[id]/variants`
+`PATCH /api/admin/products/[id]/variants/[variantId semantics]`
+
+The product creation UI now allows selecting a brand and category. The product editor already supports changing them. Variant pricing UI now makes the current price and original compare-at price explicit, with a visible discount percentage and server-side validation.
 
 ## Storefront Completed
 - RTL/light-first global shell
@@ -161,57 +105,50 @@ Favorites are customer-scoped and backed by the existing `favorites` table.
 - Category and brand navigation pages
 - Product detail
 - Product variants and inventory-aware availability
+- Product-card favorite action
+- Product detail favorite action
+- Customer review/rating form
+- Review eligibility and moderation flow
+- Visible product discount/original-price presentation
 - Cart
 - Customer addresses
 - Province-aware shipping
 - Checkout UI and transactional order creation
 - Customer order detail/payment-unavailable state
-- Favorites API, favorite button and `/favorites` page
+- Favorites API and `/favorites` page
+
+## Admin Completed
+- Product list/edit/delete/create flows
+- Product image management
+- Product variant/SKU management
+- Brand/category assignment during product creation and editing
+- Product variant price and compare-at-price discount controls
+- Review moderation queue
+- Live active-product metric on dashboard
+- Inventory and order management
 
 ## Current Storefront Gaps
-- Reviews UI/API/service is not yet implemented despite the database table existing.
-- Customer account dashboard/profile/order-history UI needs a complete audit.
-- Category/brand detail pages can be enriched further.
-- Product detail needs richer specifications, delivery information, reviews and related products.
+- Product detail can be enriched further with richer specifications, delivery information and related products.
 - Mobile navigation/search UX needs refinement.
 - Loading/error/empty-state polish and accessibility need a final pass.
 
-## Admin
-Admin/CMS remains to be audited and implemented where genuinely missing. The existing admin review/catalog/inventory/order services are now kept compatible with the current route contracts.
-
-## Production Hardening Completed In This Milestone
-- Restored admin review service compatibility exports used by the existing admin UI/routes.
-- Restored address repository mutation exports required by the canonical address service.
-- Corrected account API routes to use the canonical API response helper and current validation function names.
-- Corrected `/api/orders` POST to use the canonical transactional cart checkout service rather than a removed legacy checkout export.
-- Aligned the disabled payment provider with the provider-factory abstraction; no real gateway is introduced.
-- Replaced mock-payment `window.location.assign()` with Next.js router navigation.
-- Confirmed the canonical source tree is under `src/app` and `src/server`; stale root `app/` routes were removed in the preceding cleanup milestone.
-
 ## Production Hardening Remaining
-- Run a fresh local install/build from the latest `origin/main` checkout and address any newly surfaced errors.
+- Run a fresh local lint/build from the latest `origin/main` checkout and address any newly surfaced errors.
 - Automated tests
-- Full end-to-end checkout tests
+- Full end-to-end checkout and review tests
 - Payment gateway adapter + callback verification when credentials/provider are supplied
 - Reservation expiry/release background lifecycle verification
 - Security audit/rate limiting/CSRF review where applicable
 - Performance/SEO audit
 - Production deployment verification
 
-## Recent Commits
-- Production build hardening: admin review compatibility
-- Production build hardening: address repository mutations
-- Production build hardening: account API response/validation imports
-- Production build hardening: canonical order checkout service
-- Production build hardening: disabled payment provider abstraction
-- Production build hardening: mock payment navigation
-- Product discovery price/stock filters
-- Favorites repository/service/API/UI
-- Public categories page
-- Public brands page
-- Checkout/address integration
-- Order architecture cleanup
-- Payment-ready/no-gateway flow
+## Recent Milestone
+Implemented the requested catalog/customer engagement fixes:
+1. Replaced the stale product metric with a database-backed live count of active products.
+2. Added favorite controls to product cards and improved favorite-state loading.
+3. Added customer rating/review UX backed by the existing review service and moderation workflow.
+4. Added brand/category selectors to the new-product CMS form.
+5. Added explicit product-variant discount controls using current price + original compare-at price, including storefront discount badges.
 
 ## Development Rules
 1. Inspect existing code before creating new architecture.
