@@ -1,11 +1,14 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 const money = (value) => new Intl.NumberFormat('fa-IR').format(Number(value || 0));
 
 export default function CartClient({ initialCart }) {
+  const router = useRouter();
   const [cart, setCart] = useState(initialCart);
   const [busy, setBusy] = useState(null);
   const [error, setError] = useState('');
@@ -15,7 +18,7 @@ export default function CartClient({ initialCart }) {
     setBusy(itemId); setError('');
     try {
       const response = await fetch(`/api/cart/items/${itemId}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ quantity }) });
-      if (response.status === 401) { window.location.href = `/login?returnTo=${encodeURIComponent('/cart')}`; return; }
+      if (response.status === 401) { router.push(`/login?returnTo=${encodeURIComponent('/cart')}`); return; }
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error?.message || 'خطا در بروزرسانی سبد خرید');
       setCart(payload.data.cart);
@@ -26,7 +29,7 @@ export default function CartClient({ initialCart }) {
     setBusy(itemId); setError('');
     try {
       const response = await fetch(`/api/cart/items/${itemId}`, { method: 'DELETE' });
-      if (response.status === 401) { window.location.href = `/login?returnTo=${encodeURIComponent('/cart')}`; return; }
+      if (response.status === 401) { router.push(`/login?returnTo=${encodeURIComponent('/cart')}`); return; }
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error?.message || 'خطا در حذف محصول');
       setCart(payload.data.cart);
@@ -45,8 +48,8 @@ export default function CartClient({ initialCart }) {
         <section className="overflow-hidden rounded-2xl border border-[var(--border)] bg-white">
           {cart.items.map((item, index) => (
             <article key={item.id} className={`flex gap-4 p-4 sm:p-5 ${index ? 'border-t border-[var(--border)]' : ''}`}>
-              <Link href={`/products/${item.productSlug}`} className="h-24 w-24 shrink-0 overflow-hidden rounded-xl bg-slate-50 sm:h-28 sm:w-28">
-                {item.primaryImageUrl ? <img src={item.primaryImageUrl} alt={item.productName} className="h-full w-full object-contain p-2" /> : <span className="flex h-full items-center justify-center text-xs text-slate-400">تصویر</span>}
+              <Link href={`/products/${item.productSlug}`} className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl bg-slate-50 sm:h-28 sm:w-28">
+                {item.primaryImageUrl ? <Image src={item.primaryImageUrl} alt={item.productName} fill sizes="(max-width: 640px) 96px, 112px" unoptimized className="object-contain p-2" /> : <span className="flex h-full items-center justify-center text-xs text-slate-400">تصویر</span>}
               </Link>
               <div className="min-w-0 flex-1"><Link href={`/products/${item.productSlug}`} className="line-clamp-2 text-sm font-bold leading-6 hover:text-[var(--brand)]">{item.productName}</Link><p className="mt-1 text-xs text-slate-400">{item.variantName || item.sku}</p><p className="mt-3 text-sm font-black">{money(item.price)} تومان</p>
                 <div className="mt-3 flex items-center justify-between gap-3"><div className="flex h-9 items-center rounded-lg border border-[var(--border)]"><button disabled={busy === item.id} onClick={() => changeItem(item.id, item.quantity + 1)} className="px-3 disabled:opacity-40">+</button><span className="min-w-8 text-center text-xs font-bold">{money(item.quantity)}</span><button disabled={busy === item.id} onClick={() => changeItem(item.id, item.quantity - 1)} className="px-3 disabled:opacity-40">−</button></div><button disabled={busy === item.id} onClick={() => removeItem(item.id)} className="text-xs font-semibold text-slate-400 hover:text-red-600 disabled:opacity-40">حذف</button></div>
