@@ -2,16 +2,106 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import ProductImageManager from '../../../../components/admin/ProductImageManager.js';
 
 const statuses = { DRAFT: 'پیش‌نویس', ACTIVE: 'فعال', ARCHIVED: 'بایگانی' };
 
+function normalizeImages(images = []) {
+  return images.map((image) => ({
+    id: Number(image.id),
+    variantId: image.variantId ?? image.variant_id ?? null,
+    url: image.url,
+    altText: image.altText ?? image.alt_text ?? null,
+    sortOrder: Number(image.sortOrder ?? image.sort_order ?? 0),
+    isPrimary: Boolean(image.isPrimary ?? image.is_primary),
+  }));
+}
+
 export default function AdminProductEditor({ params }) {
-  const [id, setId] = useState(null); const [data, setData] = useState(null); const [categories, setCategories] = useState([]); const [brands, setBrands] = useState([]); const [message, setMessage] = useState(''); const [saving, setSaving] = useState(false); const [variant, setVariant] = useState({ sku: '', name: '', price: '', compareAtPrice: '', quantity: 0, lowStockThreshold: 5 });
-  useEffect(() => { Promise.resolve(params).then(p => setId(p.id)); }, [params]);
-  useEffect(() => { if (!id) return; Promise.all([fetch(`/api/admin/products/${id}/details`).then(r=>r.json()), fetch('/api/admin/catalog/options').then(r=>r.json())]).then(([product, options]) => { setData(product); setCategories(options.categories || []); setBrands(options.brands || []); }).catch(e=>setMessage(e.message)); }, [id]);
+  const [id, setId] = useState(null);
+  const [data, setData] = useState(null);
+  const [categories, setCategories] = useState([]);
+  const [brands, setBrands] = useState([]);
+  const [message, setMessage] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [variant, setVariant] = useState({ sku: '', name: '', price: '', compareAtPrice: '', quantity: 0, lowStockThreshold: 5 });
+
+  useEffect(() => { Promise.resolve(params).then((p) => setId(p.id)); }, [params]);
+
+  useEffect(() => {
+    if (!id) return;
+    Promise.all([
+      fetch(`/api/admin/products/${id}/details`).then((r) => r.json()),
+      fetch('/api/admin/catalog/options').then((r) => r.json()),
+    ]).then(([product, options]) => {
+      setData({ ...product, images: normalizeImages(product.images) });
+      setCategories(options.categories || []);
+      setBrands(options.brands || []);
+    }).catch((error) => setMessage(error.message));
+  }, [id]);
+
   if (!data) return <section dir="rtl" className="p-8 text-slate-500">در حال بارگذاری…</section>;
+
   const p = data.product;
-  async function saveProduct(event) { event.preventDefault(); setSaving(true); setMessage(''); try { const response = await fetch(`/api/admin/products/${id}`, { method:'PATCH', headers:{'content-type':'application/json'}, body:JSON.stringify({ status:p.status, categoryId:p.category_id, brandId:p.brand_id, name:p.name, slug:p.slug, shortDescription:p.short_description, description:p.description, isFeatured:p.is_featured, seoTitle:p.seo_title, seoDescription:p.seo_description }) }); const result=await response.json(); if(!response.ok) throw new Error(result?.error?.message || 'خطا در ذخیره محصول'); setMessage('محصول ذخیره شد.'); } catch(e){setMessage(e.message)} finally{setSaving(false)} }
-  async function addVariant(event) { event.preventDefault(); setSaving(true); setMessage(''); try { const response=await fetch(`/api/admin/products/${id}/variants`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(variant)}); const result=await response.json(); if(!response.ok) throw new Error(result?.error?.message || 'خطا در ایجاد تنوع'); setData({...data,variants:[...data.variants,result.variant]}); setVariant({sku:'',name:'',price:'',compareAtPrice:'',quantity:0,lowStockThreshold:5}); setMessage('تنوع جدید ایجاد شد.'); } catch(e){setMessage(e.message)} finally{setSaving(false)} }
-  return <section dir="rtl" className="space-y-6"><div className="flex items-start justify-between gap-4"><div><p className="text-sm font-semibold text-slate-500">کاتالوگ</p><h1 className="mt-1 text-3xl font-black">ویرایش محصول</h1></div><Link href="/admin/products" className="rounded-xl border bg-white px-4 py-2 text-sm font-bold">بازگشت</Link></div><form onSubmit={saveProduct} className="grid gap-4 rounded-2xl border bg-white p-6 shadow-sm"><h2 className="text-xl font-black">اطلاعات اصلی</h2><div className="grid gap-4 md:grid-cols-2"><label className="grid gap-2 text-sm font-bold">نام<input value={p.name||''} onChange={e=>setData({...data,product:{...p,name:e.target.value}})} className="rounded-xl border px-4 py-3 font-normal" /></label><label className="grid gap-2 text-sm font-bold">Slug<input value={p.slug||''} onChange={e=>setData({...data,product:{...p,slug:e.target.value}})} className="rounded-xl border px-4 py-3 font-normal" /></label><label className="grid gap-2 text-sm font-bold">دسته‌بندی<select value={p.category_id||''} onChange={e=>setData({...data,product:{...p,category_id:e.target.value||null}})} className="rounded-xl border px-4 py-3 font-normal"><option value="">بدون دسته‌بندی</option>{categories.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}</select></label><label className="grid gap-2 text-sm font-bold">برند<select value={p.brand_id||''} onChange={e=>setData({...data,product:{...p,brand_id:e.target.value||null}})} className="rounded-xl border px-4 py-3 font-normal"><option value="">بدون برند</option>{brands.map(b=><option key={b.id} value={b.id}>{b.name}</option>)}</select></label><label className="grid gap-2 text-sm font-bold">وضعیت<select value={p.status} onChange={e=>setData({...data,product:{...p,status:e.target.value}})} className="rounded-xl border px-4 py-3 font-normal">{Object.entries(statuses).map(([k,v])=><option key={k} value={k}>{v}</option>)}</select></label><label className="flex items-center gap-3 text-sm font-bold pt-8"><input type="checkbox" checked={Boolean(p.is_featured)} onChange={e=>setData({...data,product:{...p,is_featured:e.target.checked}})} /> محصول ویژه</label></div><label className="grid gap-2 text-sm font-bold">توضیح کوتاه<textarea value={p.short_description||''} onChange={e=>setData({...data,product:{...p,short_description:e.target.value}})} className="rounded-xl border px-4 py-3 font-normal" /></label><label className="grid gap-2 text-sm font-bold">توضیحات<textarea rows="7" value={p.description||''} onChange={e=>setData({...data,product:{...p,description:e.target.value}})} className="rounded-xl border px-4 py-3 font-normal" /></label><div className="grid gap-4 md:grid-cols-2"><label className="grid gap-2 text-sm font-bold">عنوان SEO<input value={p.seo_title||''} onChange={e=>setData({...data,product:{...p,seo_title:e.target.value}})} className="rounded-xl border px-4 py-3 font-normal" /></label><label className="grid gap-2 text-sm font-bold">توضیحات SEO<input value={p.seo_description||''} onChange={e=>setData({...data,product:{...p,seo_description:e.target.value}})} className="rounded-xl border px-4 py-3 font-normal" /></label></div><button disabled={saving} className="w-fit rounded-xl bg-slate-950 px-5 py-3 font-bold text-white disabled:opacity-50">ذخیره محصول</button>{message&&<p className="text-sm text-slate-600">{message}</p>}</form><div className="rounded-2xl border bg-white p-6 shadow-sm"><h2 className="text-xl font-black">تنوع‌ها</h2><div className="mt-5 overflow-x-auto"><table className="w-full min-w-[760px] text-right text-sm"><thead className="border-b bg-slate-50"><tr><th className="p-3">SKU</th><th className="p-3">نام</th><th className="p-3">قیمت</th><th className="p-3">موجودی</th><th className="p-3">رزرو</th><th className="p-3">قابل فروش</th></tr></thead><tbody className="divide-y">{data.variants.map(v=><tr key={v.id}><td className="p-3 font-mono text-xs">{v.sku}</td><td className="p-3">{v.name||'—'}</td><td className="p-3 font-bold">{Number(v.price).toLocaleString('fa-IR')} تومان</td><td className="p-3">{v.quantity??0}</td><td className="p-3">{v.reserved_quantity??0}</td><td className="p-3 font-bold">{Math.max(Number(v.quantity??0)-Number(v.reserved_quantity??0),0)}</td></tr>)}</tbody></table></div><form onSubmit={addVariant} className="mt-6 grid gap-3 border-t pt-6 md:grid-cols-3"><input required placeholder="SKU" value={variant.sku} onChange={e=>setVariant({...variant,sku:e.target.value})} className="rounded-xl border px-4 py-3"/><input placeholder="نام تنوع" value={variant.name} onChange={e=>setVariant({...variant,name:e.target.value})} className="rounded-xl border px-4 py-3"/><input required type="number" min="0" placeholder="قیمت" value={variant.price} onChange={e=>setVariant({...variant,price:e.target.value})} className="rounded-xl border px-4 py-3"/><input type="number" min="0" placeholder="قیمت قبل" value={variant.compareAtPrice} onChange={e=>setVariant({...variant,compareAtPrice:e.target.value})} className="rounded-xl border px-4 py-3"/><input type="number" min="0" placeholder="موجودی" value={variant.quantity} onChange={e=>setVariant({...variant,quantity:e.target.value})} className="rounded-xl border px-4 py-3"/><input type="number" min="0" placeholder="حد هشدار" value={variant.lowStockThreshold} onChange={e=>setVariant({...variant,lowStockThreshold:e.target.value})} className="rounded-xl border px-4 py-3"/><button disabled={saving} className="rounded-xl bg-slate-950 px-5 py-3 font-bold text-white">افزودن تنوع</button></form></div></section>;
+
+  async function saveProduct(event) {
+    event.preventDefault();
+    setSaving(true); setMessage('');
+    try {
+      const response = await fetch(`/api/admin/products/${id}`, {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ status: p.status, categoryId: p.category_id, brandId: p.brand_id, name: p.name, slug: p.slug, shortDescription: p.short_description, description: p.description, isFeatured: p.is_featured, seoTitle: p.seo_title, seoDescription: p.seo_description }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result?.error?.message || 'خطا در ذخیره محصول');
+      setMessage('محصول ذخیره شد.');
+    } catch (error) { setMessage(error.message); } finally { setSaving(false); }
+  }
+
+  async function addVariant(event) {
+    event.preventDefault(); setSaving(true); setMessage('');
+    try {
+      const response = await fetch(`/api/admin/products/${id}/variants`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(variant) });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result?.error?.message || 'خطا در ایجاد تنوع');
+      setData({ ...data, variants: [...data.variants, result.variant] });
+      setVariant({ sku: '', name: '', price: '', compareAtPrice: '', quantity: 0, lowStockThreshold: 5 });
+      setMessage('تنوع جدید ایجاد شد.');
+    } catch (error) { setMessage(error.message); } finally { setSaving(false); }
+  }
+
+  return (
+    <section dir="rtl" className="space-y-6">
+      <div className="flex items-start justify-between gap-4">
+        <div><p className="text-sm font-semibold text-slate-500">کاتالوگ</p><h1 className="mt-1 text-3xl font-black">ویرایش محصول</h1></div>
+        <Link href="/admin/products" className="rounded-xl border bg-white px-4 py-2 text-sm font-bold">بازگشت</Link>
+      </div>
+
+      <form onSubmit={saveProduct} className="grid gap-4 rounded-2xl border bg-white p-6 shadow-sm">
+        <h2 className="text-xl font-black">اطلاعات اصلی</h2>
+        <div className="grid gap-4 md:grid-cols-2">
+          <label className="grid gap-2 text-sm font-bold">نام<input value={p.name || ''} onChange={(e) => setData({ ...data, product: { ...p, name: e.target.value } })} className="rounded-xl border px-4 py-3 font-normal" /></label>
+          <label className="grid gap-2 text-sm font-bold">Slug<input value={p.slug || ''} onChange={(e) => setData({ ...data, product: { ...p, slug: e.target.value } })} className="rounded-xl border px-4 py-3 font-normal" /></label>
+          <label className="grid gap-2 text-sm font-bold">دسته‌بندی<select value={p.category_id || ''} onChange={(e) => setData({ ...data, product: { ...p, category_id: e.target.value || null } })} className="rounded-xl border px-4 py-3 font-normal"><option value="">بدون دسته‌بندی</option>{categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></label>
+          <label className="grid gap-2 text-sm font-bold">برند<select value={p.brand_id || ''} onChange={(e) => setData({ ...data, product: { ...p, brand_id: e.target.value || null } })} className="rounded-xl border px-4 py-3 font-normal"><option value="">بدون برند</option>{brands.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}</select></label>
+          <label className="grid gap-2 text-sm font-bold">وضعیت<select value={p.status} onChange={(e) => setData({ ...data, product: { ...p, status: e.target.value } })} className="rounded-xl border px-4 py-3 font-normal">{Object.entries(statuses).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select></label>
+          <label className="flex items-center gap-3 pt-8 text-sm font-bold"><input type="checkbox" checked={Boolean(p.is_featured)} onChange={(e) => setData({ ...data, product: { ...p, is_featured: e.target.checked } })} /> محصول ویژه</label>
+        </div>
+        <label className="grid gap-2 text-sm font-bold">توضیح کوتاه<textarea value={p.short_description || ''} onChange={(e) => setData({ ...data, product: { ...p, short_description: e.target.value } })} className="rounded-xl border px-4 py-3 font-normal" /></label>
+        <label className="grid gap-2 text-sm font-bold">توضیحات<textarea rows="7" value={p.description || ''} onChange={(e) => setData({ ...data, product: { ...p, description: e.target.value } })} className="rounded-xl border px-4 py-3 font-normal" /></label>
+        <div className="grid gap-4 md:grid-cols-2"><label className="grid gap-2 text-sm font-bold">عنوان SEO<input value={p.seo_title || ''} onChange={(e) => setData({ ...data, product: { ...p, seo_title: e.target.value } })} className="rounded-xl border px-4 py-3 font-normal" /></label><label className="grid gap-2 text-sm font-bold">توضیحات SEO<input value={p.seo_description || ''} onChange={(e) => setData({ ...data, product: { ...p, seo_description: e.target.value } })} className="rounded-xl border px-4 py-3 font-normal" /></label></div>
+        <button disabled={saving} className="w-fit rounded-xl bg-slate-950 px-5 py-3 font-bold text-white disabled:opacity-50">ذخیره محصول</button>
+        {message && <p className="text-sm text-slate-600">{message}</p>}
+      </form>
+
+      <ProductImageManager productId={id} images={data.images} onChange={(images) => setData({ ...data, images })} />
+
+      <div className="rounded-2xl border bg-white p-6 shadow-sm">
+        <h2 className="text-xl font-black">تنوع‌ها</h2>
+        <div className="mt-5 overflow-x-auto"><table className="w-full min-w-[760px] text-right text-sm"><thead className="border-b bg-slate-50"><tr><th className="p-3">SKU</th><th className="p-3">نام</th><th className="p-3">قیمت</th><th className="p-3">موجودی</th><th className="p-3">رزرو</th><th className="p-3">قابل فروش</th></tr></thead><tbody className="divide-y">{data.variants.map((v) => <tr key={v.id}><td className="p-3 font-mono text-xs">{v.sku}</td><td className="p-3">{v.name || '—'}</td><td className="p-3 font-bold">{Number(v.price).toLocaleString('fa-IR')} تومان</td><td className="p-3">{v.quantity ?? 0}</td><td className="p-3">{v.reserved_quantity ?? 0}</td><td className="p-3 font-bold">{Math.max(Number(v.quantity ?? 0) - Number(v.reserved_quantity ?? 0), 0)}</td></tr>)}</tbody></table></div>
+        <form onSubmit={addVariant} className="mt-6 grid gap-3 border-t pt-6 md:grid-cols-3"><input required placeholder="SKU" value={variant.sku} onChange={(e) => setVariant({ ...variant, sku: e.target.value })} className="rounded-xl border px-4 py-3" /><input placeholder="نام تنوع" value={variant.name} onChange={(e) => setVariant({ ...variant, name: e.target.value })} className="rounded-xl border px-4 py-3" /><input required type="number" min="0" placeholder="قیمت" value={variant.price} onChange={(e) => setVariant({ ...variant, price: e.target.value })} className="rounded-xl border px-4 py-3" /><input type="number" min="0" placeholder="قیمت قبل" value={variant.compareAtPrice} onChange={(e) => setVariant({ ...variant, compareAtPrice: e.target.value })} className="rounded-xl border px-4 py-3" /><input type="number" min="0" placeholder="موجودی" value={variant.quantity} onChange={(e) => setVariant({ ...variant, quantity: e.target.value })} className="rounded-xl border px-4 py-3" /><input type="number" min="0" placeholder="حد هشدار" value={variant.lowStockThreshold} onChange={(e) => setVariant({ ...variant, lowStockThreshold: e.target.value })} className="rounded-xl border px-4 py-3" /><button disabled={saving} className="rounded-xl bg-slate-950 px-5 py-3 font-bold text-white">افزودن تنوع</button></form>
+      </div>
+    </section>
+  );
 }
