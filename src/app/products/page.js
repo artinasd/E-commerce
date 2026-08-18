@@ -10,7 +10,7 @@ async function getProducts(searchParams) {
   }
   const base = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
   try {
-    const response = await fetch(`${base}/api/products?${query.toString()}`, { next: { revalidate: 30 } });
+    const response = await fetch(`${base}/api/products?${query.toString()}`, { cache: 'no-store' });
     if (!response.ok) return { products: [], pagination: null, failed: true };
     return { ...(await response.json()).data, failed: false };
   } catch {
