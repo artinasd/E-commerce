@@ -4,44 +4,28 @@ import { requireUser } from '../../lib/auth/session.js';
 import { getProfile, listAddresses } from '../../server/account/service.js';
 import { query } from '../../server/db/connection.js';
 
+const money = (value) => new Intl.NumberFormat('fa-IR').format(Number(value || 0));
+const orderStatus = { PENDING: 'در انتظار پرداخت', PAID: 'پرداخت شده', PROCESSING: 'در حال پردازش', SHIPPED: 'ارسال شده', DELIVERED: 'تحویل شده', CANCELLED: 'لغو شده', REFUNDED: 'مرجوع شده' };
+
 export default async function AccountPage() {
   let user;
-  try {
-    user = await requireUser();
-  } catch (error) {
-    if (error?.code === 'UNAUTHENTICATED') redirect('/login?next=/account');
-    throw error;
-  }
-
+  try { user = await requireUser(); } catch (error) { if (error?.code === 'UNAUTHENTICATED') redirect('/login?next=/account'); throw error; }
   const [profile, addresses, orders, favorites] = await Promise.all([
     getProfile(user.id),
     listAddresses(user.id),
-    query(
-      `SELECT id,order_number,status,payment_status,total_amount,created_at FROM orders WHERE user_id=? ORDER BY created_at DESC,id DESC LIMIT 8`,
-      [user.id],
-    ),
-    query(
-      `SELECT f.product_id,
-              p.name,
-              p.slug,
-              (SELECT pi.url
-                 FROM product_images pi
-                WHERE pi.product_id = p.id
-                ORDER BY pi.is_primary DESC, pi.sort_order ASC, pi.id ASC
-                LIMIT 1) AS thumbnail_url
-         FROM favorites f
-         INNER JOIN products p ON p.id=f.product_id AND p.deleted_at IS NULL
-        WHERE f.user_id=?
-        ORDER BY f.created_at DESC
-        LIMIT 8`,
-      [user.id],
-    ),
+    query(`SELECT id,order_number,status,payment_status,total_amount,created_at FROM orders WHERE user_id=? ORDER BY created_at DESC,id DESC LIMIT 6`, [user.id]),
+    query(`SELECT f.product_id,p.name,p.slug,(SELECT pi.url FROM product_images pi WHERE pi.product_id=p.id ORDER BY pi.is_primary DESC,pi.sort_order ASC,pi.id ASC LIMIT 1) AS thumbnail_url FROM favorites f INNER JOIN products p ON p.id=f.product_id AND p.deleted_at IS NULL WHERE f.user_id=? ORDER BY f.created_at DESC LIMIT 4`, [user.id]),
   ]);
-
-  return <main dir="rtl" className="mx-auto max-w-6xl px-4 py-8">{/* existing authenticated account UI */}
-    <div className="mb-8"><p className="text-sm font-semibold text-slate-500">حساب کاربری</p><h1 className="mt-2 text-3xl font-black">سلام {profile?.firstName || 'دوست عزیز'} 👋</h1><p className="mt-2 text-slate-500">مدیریت اطلاعات، سفارش‌ها و آدرس‌های شما</p></div>
-    <div className="grid gap-5 lg:grid-cols-3"><section className="rounded-2xl border bg-white p-5 shadow-sm lg:col-span-2"><div className="flex items-center justify-between"><h2 className="text-xl font-black">اطلاعات شخصی</h2><Link href="/account/profile" className="text-sm font-bold">ویرایش</Link></div><div className="mt-5 grid gap-4 text-sm sm:grid-cols-2"><p><span className="text-slate-400">نام</span><br/><b>{[profile?.firstName, profile?.lastName].filter(Boolean).join(' ') || 'ثبت نشده'}</b></p><p><span className="text-slate-400">ایمیل</span><br/><b>{profile?.email || '—'}</b></p><p><span className="text-slate-400">تلفن</span><br/><b>{profile?.phone || '—'}</b></p></div></section><section className="rounded-2xl border bg-white p-5 shadow-sm"><h2 className="text-xl font-black">آمار حساب</h2><div className="mt-5 grid gap-3 text-sm"><div className="rounded-xl bg-slate-50 p-4"><b>{orders.length}</b><span className="mr-2 text-slate-500">سفارش اخیر</span></div><div className="rounded-xl bg-slate-50 p-4"><b>{addresses.length}</b><span className="mr-2 text-slate-500">آدرس</span></div><div className="rounded-xl bg-slate-50 p-4"><b>{favorites.length}</b><span className="mr-2 text-slate-500">علاقه‌مندی</span></div></div></section></div>
-    <section className="mt-5 rounded-2xl border bg-white p-5 shadow-sm"><div className="flex items-center justify-between"><h2 className="text-xl font-black">سفارش‌های اخیر</h2><Link href="/orders" className="text-sm font-bold">مشاهده همه</Link></div><div className="mt-4 divide-y">{orders.map((o) => <Link href={`/orders/${o.id}`} key={o.id} className="flex items-center justify-between py-4 hover:bg-slate-50"><span className="font-mono text-xs">{o.order_number}</span><span className="text-sm">{o.payment_status}</span><b>{Number(o.total_amount).toLocaleString('fa-IR')} تومان</b></Link>)}{!orders.length && <p className="py-8 text-center text-sm text-slate-500">هنوز سفارشی ندارید.</p>}</div></section>
-    <section className="mt-5 rounded-2xl border bg-white p-5 shadow-sm"><div className="flex items-center justify-between"><h2 className="text-xl font-black">آدرس‌های من</h2><Link href="/account/addresses" className="text-sm font-bold">مدیریت آدرس‌ها</Link></div><div className="mt-4 grid gap-3 md:grid-cols-2">{addresses.slice(0, 4).map((a) => <div key={a.id} className="rounded-xl border p-4 text-sm"><b>{a.recipient_name}{a.is_default ? ' · پیش‌فرض' : ''}</b><p className="mt-1 text-slate-500">{a.province}، {a.city}</p><p className="mt-1 text-slate-600">{a.address_line}</p></div>)}</div>{!addresses.length && <p className="mt-4 text-sm text-slate-500">هنوز آدرسی ثبت نکرده‌اید.</p>}</section>
+  return <main dir="rtl" className="store-shell py-7 sm:py-10">
+    <header className="relative overflow-hidden rounded-[30px] border border-[var(--border)] bg-white px-6 py-8 shadow-[0_18px_55px_rgba(23,23,23,.045)] sm:px-8"><div className="absolute -left-12 -top-16 h-44 w-44 rounded-full bg-[var(--brand-soft)] blur-2xl"/><div className="relative"><p className="text-[10px] font-black text-[var(--brand)]">فضای شخصی شما</p><h1 className="mt-2 text-3xl font-black tracking-tight">سلام {profile?.firstName || 'دوست عزیز'} 👋</h1><p className="mt-2 max-w-2xl text-[11px] leading-7 text-slate-500">سفارش‌ها، علاقه‌مندی‌ها، اطلاعات شخصی و آدرس‌های خود را از یکجا مدیریت کنید.</p><div className="mt-6 flex flex-wrap gap-2"><Link href="/orders" className="rounded-[11px] bg-slate-950 px-4 py-2.5 text-[10px] font-black text-white hover:bg-[var(--brand)]">سفارش‌های من</Link><Link href="/account/profile" className="rounded-[11px] border border-[var(--border)] px-4 py-2.5 text-[10px] font-black hover:border-slate-300">ویرایش پروفایل</Link></div></div></header>
+    <div className="mt-5 grid gap-4 sm:grid-cols-3"><Stat value={orders.length} label="سفارش اخیر"/><Stat value={addresses.length} label="آدرس ثبت‌شده"/><Stat value={favorites.length} label="علاقه‌مندی"/></div>
+    <div className="mt-5 grid gap-5 lg:grid-cols-[1.15fr_.85fr]">
+      <section className="rounded-[26px] border border-[var(--border)] bg-white p-6 shadow-[0_14px_40px_rgba(23,23,23,.035)]"><div className="flex items-center justify-between"><div><p className="text-[9px] font-black text-[var(--brand)]">آخرین فعالیت</p><h2 className="mt-1 text-lg font-black">سفارش‌های اخیر</h2></div><Link href="/orders" className="text-[10px] font-black text-slate-400 hover:text-[var(--brand)]">مشاهده همه ←</Link></div><div className="mt-5 divide-y divide-[var(--border)]">{orders.map((o) => <Link href={`/orders/${o.id}`} key={o.id} className="flex items-center gap-4 py-4 first:pt-0 last:pb-0"><div className="grid h-10 w-10 shrink-0 place-items-center rounded-[12px] bg-[#fafaf8] text-sm">⌁</div><div className="min-w-0 flex-1"><p className="truncate font-mono text-[10px] font-black">{o.order_number}</p><p className="mt-1 text-[9px] text-slate-400">{orderStatus[o.status] || o.status}</p></div><strong className="shrink-0 text-[10px]">{money(o.total_amount)} تومان</strong></Link>)}{!orders.length && <Empty label="شروع خرید" href="/products"/>}</div></section>
+      <section className="rounded-[26px] border border-[var(--border)] bg-white p-6 shadow-[0_14px_40px_rgba(23,23,23,.035)]"><div className="flex items-center justify-between"><div><p className="text-[9px] font-black text-[var(--brand)]">اطلاعات حساب</p><h2 className="mt-1 text-lg font-black">مشخصات شخصی</h2></div><Link href="/account/profile" className="text-[10px] font-black text-slate-400 hover:text-[var(--brand)]">ویرایش</Link></div><div className="mt-5 grid gap-4 text-[10px] sm:grid-cols-2"><Info label="نام" value={[profile?.firstName, profile?.lastName].filter(Boolean).join(' ') || 'ثبت نشده'}/><Info label="ایمیل" value={profile?.email || '—'}/><Info label="تلفن" value={profile?.phone || '—'}/><Info label="آدرس‌ها" value={`${addresses.length.toLocaleString('fa-IR')} آدرس`}/></div></section>
+    </div>
+    <div className="mt-5 grid gap-5 lg:grid-cols-2"><section className="rounded-[26px] border border-[var(--border)] bg-white p-6"><div className="flex items-center justify-between"><h2 className="text-lg font-black">علاقه‌مندی‌ها</h2><Link href="/favorites" className="text-[10px] font-black text-slate-400">مشاهده همه ←</Link></div><div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">{favorites.map((f) => <Link href={`/products/${f.slug}`} key={f.product_id} className="overflow-hidden rounded-[16px] bg-[#fafaf8] p-3"><div className="aspect-square overflow-hidden rounded-[12px] bg-white">{f.thumbnail_url ? <img src={f.thumbnail_url} alt="" className="h-full w-full object-contain"/> : null}</div><p className="mt-2 line-clamp-2 text-[9px] font-black leading-5">{f.name}</p></Link>)}{!favorites.length && <p className="col-span-full rounded-[16px] bg-[#fafaf8] p-6 text-center text-[10px] text-slate-400">هنوز محصولی به علاقه‌مندی‌ها اضافه نکرده‌اید.</p>}</div></section><section className="rounded-[26px] border border-[var(--border)] bg-white p-6"><div className="flex items-center justify-between"><h2 className="text-lg font-black">آدرس‌های من</h2><Link href="/account/addresses" className="text-[10px] font-black text-slate-400">مدیریت آدرس‌ها ←</Link></div><div className="mt-5 grid gap-3">{addresses.slice(0,3).map((a) => <div key={a.id} className="rounded-[16px] bg-[#fafaf8] p-4 text-[10px]"><div className="flex justify-between gap-3"><b>{a.recipient_name}</b>{a.is_default ? <span className="font-black text-emerald-600">پیش‌فرض</span> : null}</div><p className="mt-2 leading-6 text-slate-500">{a.province}، {a.city}<br/>{a.address_line}</p></div>)}{!addresses.length && <p className="rounded-[16px] bg-[#fafaf8] p-6 text-center text-[10px] text-slate-400">هنوز آدرسی ثبت نکرده‌اید.</p>}</div></section></div>
   </main>;
 }
+function Stat({ value, label }) { return <div className="rounded-[20px] border border-[var(--border)] bg-white p-5 shadow-[0_10px_30px_rgba(23,23,23,.025)]"><p className="text-2xl font-black">{Number(value).toLocaleString('fa-IR')}</p><p className="mt-1 text-[9px] font-bold text-slate-400">{label}</p></div>; }
+function Info({ label, value }) { return <div className="rounded-[14px] bg-[#fafaf8] p-4"><span className="text-slate-400">{label}</span><p className="mt-1 font-black text-slate-800">{value}</p></div>; }
+function Empty({ href, label }) { return <div className="py-10 text-center text-[10px] text-slate-400"><p>هنوز سفارشی ندارید.</p><Link href={href} className="mt-4 inline-flex rounded-[10px] bg-slate-950 px-4 py-2 text-white">{label}</Link></div>; }
