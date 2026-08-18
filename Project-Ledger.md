@@ -6,7 +6,7 @@ Iranian Persian E-Commerce Platform
 Production-oriented Persian RTL e-commerce for Iranian customers. Direction: lighter, faster, cleaner and more modern than conventional marketplace UX, inspired by leading Iranian marketplaces without copying them.
 
 ## Current Version
-0.9.3 — Catalog management and storefront fixes
+0.9.4 — React lint hardening
 
 ## Current Development Phase
 Phase 7 — Customer storefront and purchase journey / production hardening
@@ -74,7 +74,7 @@ Product discovery supports search, category, brand, pagination, sorting, minimum
 `GET /api/favorites/[productId]`
 `POST /api/favorites/[productId]`
 
-The favorite route now awaits Next.js 16 dynamic route params before reading `productId`, fixing the 500 caused by treating `params` as a synchronous object.
+The favorite route awaits Next.js 16 dynamic route params before reading `productId`.
 
 ### Reviews
 `GET /api/products/[slug]/reviews`
@@ -93,9 +93,9 @@ Customers can rate and review delivered, paid purchases. The server verifies pur
 `POST /api/admin/products/[id]/variants`
 `PATCH /api/admin/products/[id]/variants/[variantId]`
 
-The admin now has a dedicated `/admin/catalog` CMS page for creating brands and categories, including optional slugs, descriptions, images/logos, category parents and sort order. The product creation UI consumes the same catalog options.
+The admin has a dedicated `/admin/catalog` CMS page for creating brands and categories, including optional slugs, descriptions, images/logos, category parents and sort order. The product creation UI consumes the same catalog options.
 
-Variant pricing was also corrected: the pricing manager previously sent a variant update to `/api/admin/products/[productId]/variants` while the route interpreted that path segment as a variant ID. It now targets `/api/admin/products/[productId]/variants/[variantId]`, so compare-at prices are actually persisted against the intended variant.
+Variant pricing updates target the product + variant endpoint, so compare-at prices are persisted against the intended SKU.
 
 ## Storefront Completed
 - RTL/light-first global shell
@@ -148,12 +148,11 @@ Variant pricing was also corrected: the pricing manager previously sent a varian
 - Production deployment verification
 
 ## Recent Milestone
-Fixed the latest reported issues:
-1. Corrected the admin variant pricing update target so discounts are saved to the selected SKU/variant instead of accidentally treating the product ID as the variant ID.
-2. Disabled stale caching on the customer `/products` listing so newly saved prices/discounts are fetched immediately.
-3. Fixed the favorite API route for Next.js 16 async dynamic route params.
-4. Added dedicated admin APIs and a complete `/admin/catalog` UI for creating brands and categories.
-5. Added the new catalog management section to the admin navigation.
+Fixed the latest lint failures:
+1. Reworked the admin catalog initial fetch so the React hooks lint rule no longer flags state updates from the effect body.
+2. Removed the pricing manager's state-synchronizing effect and made variant drafts lazy/fallback-derived, preserving editable local state without cascading effect renders.
+3. Replaced `window.location.href` with Next.js `useRouter()` navigation for logout.
+4. Existing image warnings remain non-blocking and are isolated to image optimization recommendations rather than lint errors.
 
 ## Development Rules
 1. Inspect existing code before creating new architecture.
