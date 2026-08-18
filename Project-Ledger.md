@@ -6,7 +6,7 @@ Iranian Persian E-Commerce Platform
 Production-oriented Persian RTL e-commerce for Iranian customers. Direction: lighter, faster, cleaner and more modern than conventional marketplace UX, inspired by leading Iranian marketplaces without copying them.
 
 ## Current Version
-0.9.2 — Storefront engagement and catalog controls
+0.9.3 — Catalog management and storefront fixes
 
 ## Current Development Phase
 Phase 7 — Customer storefront and purchase journey / production hardening
@@ -67,14 +67,14 @@ Important rules:
 `GET /api/brands`
 `GET /api/brands/[slug]`
 
-Product discovery supports search, category, brand, pagination, sorting, minimum price, maximum price and in-stock filtering. Storefront product results now expose the active variant's compare-at price for discount presentation.
+Product discovery supports search, category, brand, pagination, sorting, minimum price, maximum price and in-stock filtering. Storefront listing requests are now uncached so recently changed prices/discounts appear immediately. Active variant discount information is exposed for storefront presentation.
 
 ### Favorites
 `GET /api/favorites`
 `GET /api/favorites/[productId]`
 `POST /api/favorites/[productId]`
 
-Favorite controls now appear on product cards as well as product detail pages, load the existing favorite state for authenticated customers, and redirect unauthenticated users to login.
+The favorite route now awaits Next.js 16 dynamic route params before reading `productId`, fixing the 500 caused by treating `params` as a synchronous object.
 
 ### Reviews
 `GET /api/products/[slug]/reviews`
@@ -85,13 +85,17 @@ Customers can rate and review delivered, paid purchases. The server verifies pur
 
 ### Admin Catalog
 `GET /api/admin/catalog/options`
+`POST /api/admin/catalog/brands`
+`POST /api/admin/catalog/categories`
 `POST /api/admin/products/create`
 `PATCH /api/admin/products/[id]`
 `DELETE /api/admin/products/[id]`
 `POST /api/admin/products/[id]/variants`
-`PATCH /api/admin/products/[id]/variants/[variantId semantics]`
+`PATCH /api/admin/products/[id]/variants/[variantId]`
 
-The product creation UI now allows selecting a brand and category. The product editor already supports changing them. Variant pricing UI now makes the current price and original compare-at price explicit, with a visible discount percentage and server-side validation.
+The admin now has a dedicated `/admin/catalog` CMS page for creating brands and categories, including optional slugs, descriptions, images/logos, category parents and sort order. The product creation UI consumes the same catalog options.
+
+Variant pricing was also corrected: the pricing manager previously sent a variant update to `/api/admin/products/[productId]/variants` while the route interpreted that path segment as a variant ID. It now targets `/api/admin/products/[productId]/variants/[variantId]`, so compare-at prices are actually persisted against the intended variant.
 
 ## Storefront Completed
 - RTL/light-first global shell
@@ -122,6 +126,7 @@ The product creation UI now allows selecting a brand and category. The product e
 - Product image management
 - Product variant/SKU management
 - Brand/category assignment during product creation and editing
+- Dedicated brand/category creation CMS
 - Product variant price and compare-at-price discount controls
 - Review moderation queue
 - Live active-product metric on dashboard
@@ -143,12 +148,12 @@ The product creation UI now allows selecting a brand and category. The product e
 - Production deployment verification
 
 ## Recent Milestone
-Implemented the requested catalog/customer engagement fixes:
-1. Replaced the stale product metric with a database-backed live count of active products.
-2. Added favorite controls to product cards and improved favorite-state loading.
-3. Added customer rating/review UX backed by the existing review service and moderation workflow.
-4. Added brand/category selectors to the new-product CMS form.
-5. Added explicit product-variant discount controls using current price + original compare-at price, including storefront discount badges.
+Fixed the latest reported issues:
+1. Corrected the admin variant pricing update target so discounts are saved to the selected SKU/variant instead of accidentally treating the product ID as the variant ID.
+2. Disabled stale caching on the customer `/products` listing so newly saved prices/discounts are fetched immediately.
+3. Fixed the favorite API route for Next.js 16 async dynamic route params.
+4. Added dedicated admin APIs and a complete `/admin/catalog` UI for creating brands and categories.
+5. Added the new catalog management section to the admin navigation.
 
 ## Development Rules
 1. Inspect existing code before creating new architecture.
