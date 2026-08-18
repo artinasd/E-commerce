@@ -1,9 +1,11 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 export default function Header() {
+  const router = useRouter();
   const [searchOpen, setSearchOpen] = useState(false);
   const [user, setUser] = useState(null);
   const [loggingOut, setLoggingOut] = useState(false);
@@ -23,7 +25,8 @@ export default function Header() {
     try {
       const response = await fetch('/api/auth/logout', { method: 'POST' });
       if (!response.ok) throw new Error('Logout failed');
-      window.location.href = '/';
+      router.push('/');
+      router.refresh();
     } catch {
       setLoggingOut(false);
     }
