@@ -1,83 +1,33 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
+const navItems = [['محصولات', '/products'], ['دسته‌بندی‌ها', '/categories'], ['برندها', '/brands']];
+function UserIcon() { return <svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5 fill-none stroke-current stroke-[1.8]"><circle cx="12" cy="8" r="3.2"/><path d="M5.5 19.2c.8-3.2 3.1-4.8 6.5-4.8s5.7 1.6 6.5 4.8"/></svg>; }
+function CartIcon() { return <svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5 fill-none stroke-current stroke-[1.8]"><path d="M4 5h2l1.4 9.1a2 2 0 0 0 2 1.7h7.5a2 2 0 0 0 1.9-1.4L20 8H7"/><circle cx="10" cy="19" r="1"/><circle cx="17" cy="19" r="1"/></svg>; }
+function SearchIcon() { return <svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5 fill-none stroke-current stroke-[1.8]"><circle cx="10.8" cy="10.8" r="6.3"/><path d="m16 16 4 4"/></svg>; }
+
 export default function Header() {
-  const router = useRouter();
-  const [searchOpen, setSearchOpen] = useState(false);
-  const [user, setUser] = useState(null);
-  const [loggingOut, setLoggingOut] = useState(false);
-
-  useEffect(() => {
-    let active = true;
-    fetch('/api/auth/me', { cache: 'no-store' })
-      .then((response) => (response.ok ? response.json() : null))
-      .then((result) => { if (active) setUser(result?.data?.user ?? null); })
-      .catch(() => { if (active) setUser(null); });
-    return () => { active = false; };
-  }, []);
-
-  async function handleLogout() {
-    if (loggingOut) return;
-    setLoggingOut(true);
-    try {
-      const response = await fetch('/api/auth/logout', { method: 'POST' });
-      if (!response.ok) throw new Error('Logout failed');
-      router.push('/');
-      router.refresh();
-    } catch {
-      setLoggingOut(false);
-    }
-  }
-
-  return (
-    <>
-      <header className="sticky top-0 z-50 border-b border-[var(--border)]/90 bg-white/90 backdrop-blur-xl">
-        <div className="store-shell">
-          <div className="flex min-h-[72px] items-center gap-3 sm:gap-5">
-            <Link href="/" className="group flex shrink-0 items-center gap-2.5" aria-label="صفحه اصلی">
-              <span className="grid h-10 w-10 place-items-center rounded-[12px] bg-[var(--brand)] text-lg font-black text-white shadow-[0_8px_22px_rgba(225,29,72,.22)] transition group-hover:scale-[1.04]">ف</span>
-              <span className="hidden text-[18px] font-black tracking-[-.04em] sm:block">فروشگاه</span>
-            </Link>
-
-            <nav className="hidden items-center gap-1 lg:flex" aria-label="ناوبری اصلی">
-              {[['محصولات', '/products'], ['دسته‌بندی‌ها', '/categories'], ['برندها', '/brands']].map(([label, href]) => (
-                <Link key={href} href={href} className="rounded-[10px] px-3.5 py-2 text-[13px] font-bold text-slate-600 transition hover:bg-slate-50 hover:text-slate-950">{label}</Link>
-              ))}
-            </nav>
-
-            <form action="/products" className="mr-auto hidden min-w-0 max-w-[610px] flex-1 md:flex">
-              <label className="flex h-12 w-full items-center rounded-[14px] bg-[var(--surface-soft)] px-4 transition focus-within:bg-white focus-within:ring-1 focus-within:ring-[var(--border-strong)] focus-within:shadow-[0_8px_30px_rgba(23,23,23,.06)]">
-                <span className="ml-3 text-lg text-slate-400" aria-hidden="true">⌕</span>
-                <input name="search" className="min-w-0 flex-1 bg-transparent text-[13px] font-medium outline-none" placeholder="جستجو در میان محصولات، برندها و دسته‌بندی‌ها" aria-label="جستجو" />
-              </label>
-            </form>
-
-            <div className="mr-auto flex items-center gap-2 lg:mr-0">
-              <button type="button" onClick={() => setSearchOpen((value) => !value)} className="grid h-11 w-11 place-items-center rounded-[12px] border border-[var(--border)] bg-white text-lg text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 md:hidden" aria-label="باز کردن جستجو">⌕</button>
-              {user ? (
-                <>
-                  <Link href="/account" className="hidden h-11 max-w-44 items-center gap-2 rounded-[12px] border border-[var(--border)] bg-white px-4 text-[12px] font-bold transition hover:border-slate-300 hover:bg-slate-50 sm:inline-flex">
-                    <span className="grid h-7 w-7 place-items-center rounded-full bg-slate-100 text-[11px] text-slate-600">{(user.name || user.email || 'ح').slice(0, 1)}</span>
-                    <span className="truncate">{user.name || user.email || 'حساب کاربری'}</span>
-                  </Link>
-                  <button type="button" onClick={handleLogout} disabled={loggingOut} className="hidden h-11 rounded-[12px] px-3 text-[12px] font-bold text-slate-500 transition hover:bg-red-50 hover:text-red-600 disabled:opacity-50 sm:inline-flex sm:items-center">{loggingOut ? '…' : 'خروج'}</button>
-                </>
-              ) : (
-                <Link href="/login" className="hidden h-11 items-center rounded-[12px] border border-[var(--border)] bg-white px-4 text-[12px] font-bold transition hover:border-slate-300 hover:bg-slate-50 sm:inline-flex">ورود / ثبت‌نام</Link>
-              )}
-              <Link href="/cart" className="relative grid h-11 w-11 place-items-center rounded-[12px] border border-[var(--border)] bg-white text-lg transition hover:border-slate-300 hover:bg-slate-50" aria-label="سبد خرید">🛒</Link>
-            </div>
-          </div>
-          {searchOpen && (
-            <div className="border-t border-[var(--border)] py-3 md:hidden">
-              <form action="/products"><input autoFocus name="search" className="h-11 w-full rounded-[12px] border border-[var(--border)] bg-[var(--surface-soft)] px-4 text-sm outline-none focus:bg-white" placeholder="جستجوی محصول، برند یا دسته‌بندی" aria-label="جستجو" /></form>
-            </div>
-          )}
+  const router = useRouter(); const pathname = usePathname();
+  const [searchOpen, setSearchOpen] = useState(false); const [user, setUser] = useState(null); const [loggingOut, setLoggingOut] = useState(false);
+  useEffect(() => { let active = true; fetch('/api/auth/me', { cache: 'no-store' }).then((r) => r.ok ? r.json() : null).then((r) => { if (active) setUser(r?.data?.user ?? null); }).catch(() => { if (active) setUser(null); }); return () => { active = false; }; }, []);
+  async function handleLogout() { if (loggingOut) return; setLoggingOut(true); try { const r = await fetch('/api/auth/logout', { method: 'POST' }); if (!r.ok) throw new Error(); router.push('/'); router.refresh(); } catch { setLoggingOut(false); } }
+  return <header className="sticky top-0 z-50 border-b border-[var(--border)] bg-white/95 backdrop-blur-xl">
+    <div className="store-shell">
+      <div className="flex min-h-[76px] items-center gap-3 lg:gap-7">
+        <Link href="/" className="group flex shrink-0 items-center gap-2.5" aria-label="صفحه اصلی"><span className="grid h-9 w-9 place-items-center rounded-[10px] bg-[var(--brand)] text-[15px] font-black text-white shadow-[0_7px_18px_rgba(225,29,72,.18)]">ف</span><span className="text-[18px] font-black tracking-[-.045em]">فروشگاه</span></Link>
+        <nav className="hidden items-center gap-0.5 lg:flex" aria-label="ناوبری اصلی">{navItems.map(([label, href]) => <Link key={href} href={href} className={`relative px-3 py-2 text-[12px] font-extrabold transition ${pathname === href || pathname?.startsWith(`${href}/`) ? 'text-[var(--brand)]' : 'text-slate-600 hover:text-slate-950'}`}>{label}{(pathname === href || pathname?.startsWith(`${href}/`)) && <span className="absolute inset-x-3 -bottom-5 h-0.5 rounded-full bg-[var(--brand)]"/>}</Link>)}</nav>
+        <form action="/products" className="mr-auto hidden min-w-0 max-w-[600px] flex-1 md:flex"><label className="flex h-11 w-full items-center border-b border-[var(--border-strong)] transition focus-within:border-[var(--brand)]"><SearchIcon/><input name="search" className="min-w-0 flex-1 bg-transparent px-3 text-[12px] font-medium outline-none" placeholder="جستجو در محصولات، برندها و دسته‌بندی‌ها" aria-label="جستجو"/></label></form>
+        <div className="mr-auto flex items-center gap-1.5 lg:mr-0">
+          <button type="button" onClick={() => setSearchOpen((v) => !v)} className="grid h-10 w-10 place-items-center rounded-[10px] text-slate-500 transition hover:bg-[var(--surface-soft)] hover:text-slate-950 md:hidden" aria-label="جستجو"><SearchIcon/></button>
+          {user ? <><Link href="/account" className="hidden h-10 items-center gap-2 rounded-[10px] px-2.5 text-[11px] font-extrabold transition hover:bg-[var(--surface-soft)] sm:flex"><span className="grid h-7 w-7 place-items-center rounded-full bg-[var(--brand-soft)] text-[var(--brand)]"><UserIcon/></span><span className="max-w-28 truncate">{user.name || user.email || 'حساب من'}</span></Link><button type="button" onClick={handleLogout} disabled={loggingOut} className="hidden px-2 text-[10px] font-bold text-slate-400 hover:text-red-600 disabled:opacity-50 sm:block">{loggingOut ? '...' : 'خروج'}</button></> : <Link href="/login" className="hidden h-10 items-center gap-2 rounded-[10px] border border-[var(--border)] px-3 text-[11px] font-extrabold hover:border-slate-300 sm:flex"><UserIcon/>ورود / ثبت‌نام</Link>}
+          <Link href="/cart" className="grid h-10 w-10 place-items-center rounded-[10px] text-slate-600 transition hover:bg-[var(--surface-soft)] hover:text-slate-950" aria-label="سبد خرید"><CartIcon/></Link>
         </div>
-      </header>
-    </>
-  );
+      </div>
+      {searchOpen && <div className="border-t border-[var(--border)] py-3 md:hidden"><form action="/products" className="flex h-11 items-center border-b border-[var(--border-strong)]"><SearchIcon/><input autoFocus name="search" className="min-w-0 flex-1 bg-transparent px-3 text-[12px] outline-none" placeholder="جستجوی محصول، برند یا دسته‌بندی" aria-label="جستجو"/></form></div>}
+      <div className="flex gap-1 overflow-x-auto border-t border-[var(--border)] py-2.5 lg:hidden">{navItems.map(([label, href]) => <Link key={href} href={href} className={`shrink-0 px-3 py-1.5 text-[10px] font-extrabold ${pathname === href || pathname?.startsWith(`${href}/`) ? 'text-[var(--brand)]' : 'text-slate-500'}`}>{label}</Link>)}</div>
+    </div>
+  </header>;
 }
