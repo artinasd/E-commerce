@@ -3,8 +3,9 @@ import { requireRole } from '../../lib/auth/session.js';
 
 const nav = [
   ['داشبورد', '/admin'],
-  ['نظرات', '/admin/reviews'],
   ['محصولات', '/admin/products'],
+  ['برندها و دسته‌بندی‌ها', '/admin/catalog'],
+  ['نظرات', '/admin/reviews'],
   ['موجودی', '/admin/inventory'],
   ['سفارش‌ها', '/admin/orders'],
   ['مشتریان', '/admin/customers'],
