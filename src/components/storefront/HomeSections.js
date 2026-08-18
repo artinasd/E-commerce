@@ -29,27 +29,49 @@ export default async function HomeSections() {
   const heroProducts = products.filter((p) => p.primary_image_url || p.image_url).slice(0, 2);
 
   return (
-    <div className="pb-10">
+    <div className="pb-16">
       <section className="store-shell pt-5 sm:pt-7">
-        <div className="relative min-h-[430px] overflow-hidden bg-[#f0eee8] px-6 py-10 sm:px-10 lg:px-16 lg:py-14">
-          <div className="relative z-10 max-w-[620px]">
-            <span className="inline-flex items-center border border-[#d9d5ca] bg-white/70 px-3 py-1.5 text-xs font-bold text-slate-600">فروشگاه ایرانی، تجربه‌ای تازه</span>
-            <h1 className="mt-7 text-4xl font-black leading-[1.25] tracking-tight text-[#181818] sm:text-5xl lg:text-6xl">خرید خوب،<br /><span className="text-[var(--brand)]">ساده و مطمئن.</span></h1>
-            <p className="mt-6 max-w-[520px] text-sm leading-8 text-[#5f5d58] sm:text-base">محصولات موردنظرتان را پیدا کنید، قیمت‌ها را مقایسه کنید و خرید را بدون شلوغی و پیچیدگی انجام دهید.</p>
-            <div className="mt-8 flex flex-wrap items-center gap-3">
-              <Link href="/products" className="inline-flex h-12 items-center bg-[#181818] px-6 text-sm font-bold text-white transition hover:bg-black">مشاهده محصولات</Link>
-              <Link href="/categories" className="inline-flex h-12 items-center border border-[#d7d3ca] bg-white/70 px-6 text-sm font-bold text-[#30302e] transition hover:bg-white">دسته‌بندی‌ها</Link>
+        <div className="relative overflow-hidden rounded-[28px] bg-[#eee9df] px-6 py-9 sm:px-10 sm:py-12 lg:min-h-[470px] lg:px-16 lg:py-16">
+          <div className="absolute inset-y-0 left-0 hidden w-[48%] bg-[radial-gradient(circle_at_35%_45%,rgba(255,255,255,.9),transparent_55%)] lg:block" />
+          <div className="relative z-10 max-w-[650px]">
+            <span className="inline-flex rounded-full border border-[#d6d0c2] bg-white/75 px-3.5 py-2 text-[11px] font-black text-slate-600">تجربه‌ای تازه برای خرید آنلاین</span>
+            <h1 className="mt-7 text-[42px] font-black leading-[1.22] tracking-[-.055em] text-[#171717] sm:text-6xl lg:text-[68px]">چیزی که می‌خواهی،<br /><span className="text-[var(--brand)]">همین‌جاست.</span></h1>
+            <p className="mt-6 max-w-[560px] text-[13px] font-medium leading-8 text-[#62605b] sm:text-[15px]">محصولات را راحت پیدا کن، قیمت‌ها را مقایسه کن و با یک تجربه سریع و بی‌دردسر خریدت را کامل کن.</p>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Link href="/products" className="inline-flex h-12 items-center rounded-[13px] bg-[#181818] px-7 text-[13px] font-black text-white transition hover:bg-black">شروع خرید</Link>
+              <Link href="/categories" className="inline-flex h-12 items-center rounded-[13px] border border-[#d4cec1] bg-white/75 px-7 text-[13px] font-black text-[#30302e] transition hover:bg-white">مرور دسته‌بندی‌ها</Link>
             </div>
           </div>
-          <div className="pointer-events-none absolute inset-y-0 left-0 hidden w-[52%] lg:block">
-            <div className="absolute left-14 top-10 h-64 w-52 rotate-[-7deg] border border-white/80 bg-white/70 p-3 shadow-2xl shadow-black/10">{heroProducts[0] ? <img src={heroProducts[0].primary_image_url || heroProducts[0].image_url} alt="" className="h-full w-full object-contain" /> : null}</div>
-            <div className="absolute bottom-[-24px] left-52 h-72 w-56 rotate-[6deg] border border-white/80 bg-white p-3 shadow-2xl shadow-black/10">{heroProducts[1] ? <img src={heroProducts[1].primary_image_url || heroProducts[1].image_url} alt="" className="h-full w-full object-contain" /> : null}</div>
+          <div className="pointer-events-none absolute inset-y-0 left-0 hidden w-[49%] lg:block">
+            {heroProducts[0] && <div className="absolute left-12 top-12 h-64 w-52 -rotate-6 rounded-[22px] border border-white bg-white p-3 shadow-[0_28px_70px_rgba(23,23,23,.14)]"><img src={heroProducts[0].primary_image_url || heroProducts[0].image_url} alt="" className="h-full w-full object-contain" /></div>}
+            {heroProducts[1] && <div className="absolute bottom-[-28px] left-52 h-72 w-56 rotate-6 rounded-[22px] border border-white bg-white p-3 shadow-[0_28px_70px_rgba(23,23,23,.14)]"><img src={heroProducts[1].primary_image_url || heroProducts[1].image_url} alt="" className="h-full w-full object-contain" /></div>}
           </div>
         </div>
       </section>
-      {categories.length > 0 && <section className="store-shell pt-14"><div className="flex items-end justify-between border-b border-[var(--border)] pb-4"><div><p className="text-xs font-bold text-[var(--brand)]">سریع‌تر پیدا کنید</p><h2 className="mt-1 text-2xl font-black">دسته‌بندی‌های محبوب</h2></div><Link href="/categories" className="text-sm font-bold text-slate-500 hover:text-[var(--brand)]">همه دسته‌ها ←</Link></div><div className="mt-6 grid grid-cols-2 gap-px overflow-hidden border border-[var(--border)] bg-[var(--border)] sm:grid-cols-4 lg:grid-cols-8">{categories.map((category) => <Link key={category.id} href={`/categories/${category.slug}`} className="group bg-white px-4 py-6 text-center transition hover:bg-[#fbfaf7]"><div className="mx-auto grid h-16 w-16 place-items-center border border-[#e9e6df] bg-[#f7f6f2] text-xl font-black text-slate-400 transition group-hover:border-rose-200 group-hover:bg-[var(--brand-soft)] group-hover:text-[var(--brand)]">{category.name?.slice(0, 1)}</div><p className="mt-4 line-clamp-2 text-xs font-bold leading-5 text-slate-700">{category.name}</p></Link>)}</div></section>}
-      {products.length > 0 && <section className="store-shell pt-14"><div className="flex items-end justify-between border-b border-[var(--border)] pb-4"><div><p className="text-xs font-bold text-[var(--brand)]">تازه واردها</p><h2 className="mt-1 text-2xl font-black">جدیدترین محصولات</h2></div><Link href="/products" className="text-sm font-bold text-slate-500 hover:text-[var(--brand)]">مشاهده همه ←</Link></div><div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">{products.map((product) => <ProductCard key={product.id} product={product} />)}</div></section>}
-      <section className="store-shell pt-14"><div className="grid border-y border-[var(--border)] bg-white sm:grid-cols-3">{[['ارسال شفاف', 'هزینه و روش ارسال را قبل از خرید بدانید.'], ['پرداخت امن', 'فرآیند پرداخت ساده و قابل پیگیری است.'], ['پشتیبانی', 'اطلاعات سفارش و حساب شما همیشه در دسترس است.']].map(([title, text], index) => <div key={title} className={`px-6 py-7 ${index < 2 ? 'border-b border-[var(--border)] sm:border-b-0 sm:border-l' : ''}`}><p className="text-sm font-black">{title}</p><p className="mt-2 text-xs leading-6 text-slate-500">{text}</p></div>)}</div></section>
+
+      {categories.length > 0 && <section className="store-shell pt-16">
+        <div className="flex items-end justify-between gap-4">
+          <div><p className="text-[11px] font-black text-[var(--brand)]">انتخاب سریع</p><h2 className="mt-1 text-2xl font-black tracking-tight">دسته‌بندی‌های محبوب</h2></div>
+          <Link href="/categories" className="text-[12px] font-bold text-slate-500 transition hover:text-[var(--brand)]">مشاهده همه ←</Link>
+        </div>
+        <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-8">
+          {categories.map((category) => <Link key={category.id} href={`/categories/${category.slug}`} className="group rounded-[18px] border border-[var(--border)] bg-white px-3 py-5 text-center transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-[0_14px_35px_rgba(23,23,23,.06)]"><div className="mx-auto grid h-14 w-14 place-items-center rounded-[16px] bg-[var(--surface-soft)] text-lg font-black text-slate-500 transition group-hover:bg-[var(--brand-soft)] group-hover:text-[var(--brand)]">{category.name?.slice(0, 1)}</div><p className="mt-3 line-clamp-2 text-[11px] font-extrabold leading-5 text-slate-700">{category.name}</p></Link>)}
+        </div>
+      </section>}
+
+      {products.length > 0 && <section className="store-shell pt-16">
+        <div className="flex items-end justify-between gap-4">
+          <div><p className="text-[11px] font-black text-[var(--brand)]">تازه‌ترین‌ها</p><h2 className="mt-1 text-2xl font-black tracking-tight">محصولات جدید</h2></div>
+          <Link href="/products" className="text-[12px] font-bold text-slate-500 transition hover:text-[var(--brand)]">مشاهده همه ←</Link>
+        </div>
+        <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">{products.map((product) => <ProductCard key={product.id} product={product} />)}</div>
+      </section>}
+
+      <section className="store-shell pt-16">
+        <div className="grid overflow-hidden rounded-[22px] border border-[var(--border)] bg-white sm:grid-cols-3">
+          {[['ارسال شفاف', 'روش و هزینه ارسال را قبل از پرداخت می‌بینی.'], ['پرداخت امن', 'پرداخت و وضعیت سفارش با خیال راحت پیگیری می‌شود.'], ['پشتیبانی', 'اطلاعات حساب و سفارش‌ها همیشه در دسترس توست.']].map(([title, text], index) => <div key={title} className={`px-6 py-7 ${index < 2 ? 'border-b border-[var(--border)] sm:border-b-0 sm:border-l' : ''}`}><p className="text-[13px] font-black">{title}</p><p className="mt-2 text-[11px] font-medium leading-6 text-slate-500">{text}</p></div>)}
+        </div>
+      </section>
     </div>
   );
 }
