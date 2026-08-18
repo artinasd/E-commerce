@@ -14,6 +14,26 @@ export default function AdminCatalogPage() {
   const [message, setMessage] = useState('');
   const [saving, setSaving] = useState('');
 
+  useEffect(() => {
+    let active = true;
+
+    async function fetchCatalog() {
+      try {
+        const response = await fetch('/api/admin/catalog/options', { cache: 'no-store' });
+        const json = await response.json();
+        if (!response.ok) throw new Error(json?.error?.message || 'خطا در دریافت کاتالوگ');
+        if (!active) return;
+        setBrands(json.data?.brands || []);
+        setCategories(json.data?.categories || []);
+      } catch (error) {
+        if (active) setMessage(error.message);
+      }
+    }
+
+    fetchCatalog();
+    return () => { active = false; };
+  }, []);
+
   async function load() {
     const response = await fetch('/api/admin/catalog/options', { cache: 'no-store' });
     const json = await response.json();
@@ -21,8 +41,6 @@ export default function AdminCatalogPage() {
     setBrands(json.data?.brands || []);
     setCategories(json.data?.categories || []);
   }
-
-  useEffect(() => { load().catch((error) => setMessage(error.message)); }, []);
 
   async function create(type, data) {
     setSaving(type); setMessage('');
