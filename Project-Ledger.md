@@ -6,13 +6,18 @@ Iranian Persian E-Commerce Platform
 Production-oriented Persian RTL e-commerce for Iranian customers. Direction: lighter, faster, cleaner and more modern than conventional marketplace UX, inspired by leading Iranian marketplaces without copying them.
 
 ## Current Version
-0.9.4 — React lint hardening
+0.9.5 — storefront mobile/navigation polish
 
 ## Current Development Phase
 Phase 7 — Customer storefront and purchase journey / production hardening
 
 ## Repository
 `artinasd/E-commerce` — branch `main`
+
+## Latest Verified Commit
+`77db220005208a0e4fd3c4030094e7bb610f9fe6` — `ui: use real category imagery on storefront home`
+
+Previous immediate commit: `a486231d44852359e49ef7c3ea3d2d6172aade41` — `ui: refine mobile storefront navigation`.
 
 ## Stack
 - Next.js 16 App Router
@@ -74,8 +79,6 @@ Product discovery supports search, category, brand, pagination, sorting, minimum
 `GET /api/favorites/[productId]`
 `POST /api/favorites/[productId]`
 
-The favorite route awaits Next.js 16 dynamic route params before reading `productId`.
-
 ### Reviews
 `GET /api/products/[slug]/reviews`
 `POST /api/products/[slug]/reviews`
@@ -94,8 +97,6 @@ Customers can rate and review delivered, paid purchases. The server verifies pur
 `PATCH /api/admin/products/[id]/variants/[variantId]`
 
 The admin has a dedicated `/admin/catalog` CMS page for creating brands and categories, including optional slugs, descriptions, images/logos, category parents and sort order. The product creation UI consumes the same catalog options.
-
-Variant pricing updates target the product + variant endpoint, so compare-at prices are persisted against the intended SKU.
 
 ## Storefront Completed
 - RTL/light-first global shell
@@ -121,6 +122,14 @@ Variant pricing updates target the product + variant endpoint, so compare-at pri
 - Customer order detail/payment-unavailable state
 - Favorites API and `/favorites` page
 
+## Recent UI/UX Work Verified
+- Storefront visual direction is light-first with neutral surfaces and restrained rose branding.
+- Homepage composition and product-card hierarchy were previously redesigned.
+- Product discovery and filters were recently redesigned.
+- Mobile storefront navigation now exposes account/login access directly on small screens and keeps search/cart actions compact.
+- Homepage category discovery now uses the real `categories.image_url` when present instead of always rendering a generated initial tile.
+- The existing design intentionally avoids excessive rounded cards, dark surfaces and generic dashboard-style decoration.
+
 ## Admin Completed
 - Product list/edit/delete/create flows
 - Product image management
@@ -134,11 +143,12 @@ Variant pricing updates target the product + variant endpoint, so compare-at pri
 
 ## Current Storefront Gaps
 - Product detail can be enriched further with richer specifications, delivery information and related products.
-- Mobile navigation/search UX needs refinement.
+- Mobile navigation/search UX has received a first refinement but still needs broader page-by-page responsive verification.
 - Loading/error/empty-state polish and accessibility need a final pass.
+- Image optimization warnings should be reviewed and migrated to `next/image` where practical without breaking arbitrary external image URLs.
 
 ## Production Hardening Remaining
-- Run a fresh local lint/build from the latest `origin/main` checkout and address any newly surfaced errors.
+- Run a fresh local lint/build from the latest `main` checkout and address any newly surfaced errors.
 - Automated tests
 - Full end-to-end checkout and review tests
 - Payment gateway adapter + callback verification when credentials/provider are supplied
@@ -147,13 +157,6 @@ Variant pricing updates target the product + variant endpoint, so compare-at pri
 - Performance/SEO audit
 - Production deployment verification
 
-## Recent Milestone
-Fixed the latest lint failures:
-1. Reworked the admin catalog initial fetch so the React hooks lint rule no longer flags state updates from the effect body.
-2. Removed the pricing manager's state-synchronizing effect and made variant drafts lazy/fallback-derived, preserving editable local state without cascading effect renders.
-3. Replaced `window.location.href` with Next.js `useRouter()` navigation for logout.
-4. Existing image warnings remain non-blocking and are isolated to image optimization recommendations rather than lint errors.
-
 ## Development Rules
 1. Inspect existing code before creating new architecture.
 2. Prefer canonical existing services/repositories over duplicates.
@@ -161,3 +164,4 @@ Fixed the latest lint failures:
 4. Keep customer data ownership enforced server-side.
 5. Keep prices/inventory/order totals authoritative on the server.
 6. Update this ledger after every major architectural or feature milestone.
+7. The repository and this ledger are the continuity source of truth for future sessions.
