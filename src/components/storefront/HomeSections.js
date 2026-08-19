@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import ProductCard from './ProductCard';
+import HeroProductShowcase from './HeroProductShowcase';
 import { getCategories, getProducts } from '../../server/catalog/service.js';
 
 export default async function HomeSections() {
@@ -16,7 +17,6 @@ export default async function HomeSections() {
     // Keep the homepage renderable if the catalog is temporarily unavailable.
   }
 
-  const hero = products.find((product) => product.primary_image_url || product.image_url);
   const featuredProducts = products.slice(0, 8);
   const moreProducts = products.slice(8, 16);
 
@@ -24,7 +24,7 @@ export default async function HomeSections() {
     <section className="store-shell pt-4 sm:pt-6">
       <div className="relative grid overflow-hidden border border-[var(--border)] bg-[#f0ede6] lg:grid-cols-[1.02fr_.98fr]">
         <div className="relative z-10 flex items-center px-6 py-9 sm:px-10 lg:px-14 lg:py-11"><div className="max-w-[620px]"><p className="text-[12px] font-black tracking-wide text-[var(--brand)]">فروشگاه آنلاین شما</p><h1 className="mt-4 text-[39px] font-black leading-[1.2] tracking-[-.055em] text-[#151515] sm:text-5xl lg:text-[58px]">انتخاب خوب،<br/><span className="text-[var(--brand)]">ساده‌تر از همیشه.</span></h1><p className="mt-5 max-w-[520px] text-[15px] font-medium leading-8 text-[#62605b]">محصولات منتخب، قیمت‌های شفاف و تجربه‌ای سریع و آرام برای خرید روزمره شما.</p><div className="mt-7 flex flex-wrap gap-3"><Link href="/products" className="inline-flex h-12 items-center bg-[#171717] px-8 text-[14px] font-black text-white transition hover:bg-[var(--brand)]">مشاهده محصولات</Link><Link href="/categories" className="inline-flex h-12 items-center border border-[#d1ccc1] bg-white/70 px-8 text-[14px] font-black text-[#292929] transition hover:bg-white">دسته‌بندی‌ها</Link></div><div className="mt-7 flex flex-wrap gap-7 border-t border-[#d7d1c5] pt-4 text-[11px] font-bold text-slate-500"><span><b className="text-slate-900">سریع</b> · تجربه سبک</span><span><b className="text-slate-900">شفاف</b> · قیمت و ارسال</span><span><b className="text-slate-900">مطمئن</b> · پیگیری سفارش</span></div></div></div>
-        <div className="relative min-h-[260px] overflow-hidden bg-[#e8e3d8] sm:min-h-[330px] lg:min-h-[420px]">{hero ? <><div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_45%,rgba(255,255,255,.9),transparent_58%)]"/><img src={hero.primary_image_url || hero.image_url} alt={hero.name} className="absolute inset-0 h-full w-full object-contain p-4 sm:p-7 lg:p-8 transition duration-700 hover:scale-[1.025]"/></> : <div className="grid h-full place-items-center text-sm font-black text-slate-400">محصولات تازه به‌زودی</div>}</div>
+        <div className="relative min-h-[300px] overflow-hidden bg-[#e8e3d8] sm:min-h-[370px] lg:min-h-[440px]"><HeroProductShowcase products={products}/></div>
       </div>
     </section>
 
