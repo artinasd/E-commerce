@@ -13,33 +13,37 @@ export default function ProductGallery({ productName, images }) {
   }
 
   return (
-    <div>
-      <div className="relative flex min-h-[420px] items-center justify-center overflow-hidden bg-[#f6f6f3] sm:min-h-[520px] lg:min-h-[560px]">
+    <div className="bg-white">
+      <div className="relative flex min-h-[400px] items-center justify-center overflow-hidden bg-[#f3f2ee] sm:min-h-[500px] lg:min-h-[570px]">
+        <div className="pointer-events-none absolute inset-6 border border-black/[.045] sm:inset-8" />
         <Image
           src={active.url}
           alt={active.alt_text || productName}
-          width={900}
-          height={900}
+          width={1000}
+          height={1000}
           sizes="(max-width: 1024px) 100vw, 52vw"
           unoptimized
-          className="h-full max-h-[520px] w-full object-contain transition duration-300 sm:max-h-[560px]"
+          className="relative z-10 h-full max-h-[520px] w-full object-contain px-5 py-7 transition duration-300 sm:max-h-[550px] sm:px-10 sm:py-9"
           priority
         />
+        {items.length > 1 && <span className="absolute bottom-4 left-4 z-20 bg-white/90 px-2.5 py-1 text-[9px] font-black text-slate-500 shadow-sm">{(selected + 1).toLocaleString('fa-IR')} / {items.length.toLocaleString('fa-IR')}</span>}
       </div>
       {items.length > 1 && (
-        <div className="grid grid-cols-5 gap-2 border-t border-[var(--border)] bg-white p-3 sm:grid-cols-6">
-          {items.slice(0, 10).map((image, index) => (
-            <button
-              key={image.id}
-              type="button"
-              onClick={() => setSelected(index)}
-              aria-label={`تصویر ${index + 1}`}
-              aria-pressed={index === selected}
-              className={`relative aspect-square overflow-hidden border bg-[#f8f8f6] transition ${index === selected ? 'border-[var(--brand)] ring-1 ring-[var(--brand)]' : 'border-transparent hover:border-slate-300'}`}
-            >
-              <Image src={image.url} alt={image.alt_text || productName} fill sizes="20vw" unoptimized className="object-cover" />
-            </button>
-          ))}
+        <div className="border-t border-[var(--border)] px-3 py-3 sm:px-4 sm:py-4">
+          <div className="flex flex-wrap gap-3">
+            {items.slice(0, 10).map((image, index) => (
+              <button
+                key={image.id}
+                type="button"
+                onClick={() => setSelected(index)}
+                aria-label={`تصویر ${index + 1}`}
+                aria-pressed={index === selected}
+                className={`relative h-20 w-20 shrink-0 overflow-hidden border bg-[#f8f8f6] transition sm:h-24 sm:w-24 ${index === selected ? 'border-[var(--brand)] ring-1 ring-[var(--brand)]' : 'border-[var(--border)] hover:border-slate-400'}`}
+              >
+                <Image src={image.url} alt={image.alt_text || productName} fill sizes="96px" unoptimized className="object-cover" />
+              </button>
+            ))}
+          </div>
         </div>
       )}
     </div>
