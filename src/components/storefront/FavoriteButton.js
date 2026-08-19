@@ -18,8 +18,7 @@ export default function FavoriteButton({ productId, initialFavorite = false, cla
         return Boolean(result.data?.isFavorite);
       })
       .then((value) => { if (!cancelled && value !== null) setIsFavorite(value); })
-      .catch(() => {})
-      .finally(() => {});
+      .catch(() => {});
     return () => { cancelled = true; };
   }, [productId]);
 
@@ -38,5 +37,18 @@ export default function FavoriteButton({ productId, initialFavorite = false, cla
     } finally { setBusy(false); }
   }
 
-  return <button type="button" onClick={toggle} disabled={busy} aria-label={isFavorite ? 'حذف از علاقه‌مندی‌ها' : 'افزودن به علاقه‌مندی‌ها'} aria-pressed={isFavorite} className={`inline-flex h-10 w-10 items-center justify-center rounded-full border border-[var(--border)] bg-white text-lg shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 disabled:opacity-60 ${className}`}><span aria-hidden="true" className={isFavorite ? 'text-[var(--brand)]' : 'text-slate-400'}>{isFavorite ? '♥' : '♡'}</span></button>;
+  return (
+    <button
+      type="button"
+      onClick={toggle}
+      disabled={busy}
+      aria-label={isFavorite ? 'حذف از علاقه‌مندی‌ها' : 'افزودن به علاقه‌مندی‌ها'}
+      aria-pressed={isFavorite}
+      className={`inline-flex h-11 w-11 items-center justify-center rounded-[13px] border bg-white/95 shadow-[0_5px_18px_rgba(23,23,23,.10)] backdrop-blur-sm transition hover:-translate-y-0.5 hover:shadow-[0_8px_22px_rgba(23,23,23,.14)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)] focus-visible:ring-offset-2 disabled:opacity-60 ${isFavorite ? 'border-[var(--brand)]' : 'border-slate-200'} ${className}`}
+    >
+      <svg aria-hidden="true" viewBox="0 0 24 24" className={`h-[21px] w-[21px] transition ${isFavorite ? 'fill-[var(--brand)] stroke-[var(--brand)]' : 'fill-none stroke-slate-500'}`} strokeWidth="1.8">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M20.84 8.82c0 5.4-8.84 10.08-8.84 10.08S3.16 14.22 3.16 8.82A4.66 4.66 0 0 1 12 6.22a4.66 4.66 0 0 1 8.84 2.6Z" />
+      </svg>
+    </button>
+  );
 }
