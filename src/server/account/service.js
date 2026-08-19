@@ -2,7 +2,10 @@ import { findUserById } from '../db/repositories/users.js';
 import { query, withTransaction } from '../db/connection.js';
 
 function safeText(value) {
-  return typeof value === 'string' ? value : value == null ? null : String(value);
+  if (typeof value === 'string') return value;
+  if (value == null) return null;
+  if (typeof value === 'object' && typeof value.message === 'string') return value.message;
+  return String(value);
 }
 
 function publicUser(user) {
