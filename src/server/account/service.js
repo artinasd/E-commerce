@@ -1,8 +1,12 @@
 import { findUserById } from '../db/repositories/users.js';
 import { query, withTransaction } from '../db/connection.js';
 
+function safeText(value) {
+  return typeof value === 'string' ? value : value == null ? null : String(value);
+}
+
 function publicUser(user) {
-  return { id:user.id,email:user.email,phone:user.phone,firstName:user.first_name,lastName:user.last_name,role:user.role };
+  return { id:Number(user.id), email:safeText(user.email), phone:safeText(user.phone), firstName:safeText(user.first_name), lastName:safeText(user.last_name), role:safeText(user.role) };
 }
 export async function getProfile(userId){const user=await findUserById(userId);return user?publicUser(user):null;}
 export async function updateProfile(userId,{firstName,lastName,phone}){return withTransaction(async(connection)=>{const [result]=await connection.execute(`UPDATE users SET first_name=?,last_name=?,phone=?,updated_at=CURRENT_TIMESTAMP WHERE id=? AND deleted_at IS NULL LIMIT 1`,[firstName,lastName,phone??null,userId]);if(result.affectedRows!==1)return null;const [rows]=await connection.execute(`SELECT id,email,phone,first_name,last_name,role FROM users WHERE id=? AND deleted_at IS NULL LIMIT 1`,[userId]);return rows[0]?publicUser(rows[0]):null;});}
