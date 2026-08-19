@@ -1,5 +1,5 @@
 import { hashPassword, verifyPassword } from '../../lib/auth/password.js';
-import { clearSessionCookie, setSessionCookie } from '../../lib/auth/session.js';
+import { clearSessionCookie, setSessionCookie, logoutCurrentSession } from '../../lib/auth/session.js';
 import { findUserByEmail, findUserByPhone, findUserById } from '../db/repositories/users.js';
 import {
   createSession,
@@ -104,7 +104,7 @@ export async function login({ email, phone, password }) {
 }
 
 export async function logout() {
-  await clearSessionCookie();
+  await logoutCurrentSession();
 }
 
 export async function changePassword(userId, currentPassword, newPassword) {
