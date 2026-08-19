@@ -32,8 +32,8 @@ export default async function ProductPage({ params }) {
 
   return <div className="store-shell py-6 sm:py-9">
     <nav className="mb-6 flex flex-wrap items-center gap-2 text-[10px] font-bold text-slate-400" aria-label="مسیر صفحه"><Link href="/products" className="hover:text-[var(--brand)]">محصولات</Link><span>/</span>{product.category_name && <><span>{product.category_name}</span><span>/</span></> }<span className="truncate text-slate-600">{product.name}</span></nav>
-    <div className="grid gap-8 lg:grid-cols-[minmax(0,1.05fr)_minmax(360px,.95fr)]">
-      <section className="overflow-hidden rounded-[28px] border border-[var(--border)] bg-white shadow-[0_18px_55px_rgba(23,23,23,.045)]"><ProductGallery productName={product.name} images={images}/></section>
+    <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1.05fr)_minmax(360px,.95fr)]">
+      <section className="self-start overflow-hidden rounded-[28px] border border-[var(--border)] bg-white shadow-[0_18px_55px_rgba(23,23,23,.045)]"><ProductGallery productName={product.name} images={images}/></section>
       <section className="self-start lg:sticky lg:top-24">
         <div className="rounded-[28px] border border-[var(--border)] bg-white p-6 shadow-[0_18px_55px_rgba(23,23,23,.045)] sm:p-7">
           <div className="flex items-start justify-between gap-5"><div className="min-w-0"><p className="text-[10px] font-black tracking-wide text-[var(--brand)]">{product.brand_name || 'فروشگاه ایرانیان'}</p><h1 className="mt-2 text-2xl font-black leading-[1.8] tracking-tight text-slate-950 sm:text-[30px]">{product.name}</h1></div><FavoriteButton productId={product.id} className="shrink-0"/></div>
