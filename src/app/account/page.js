@@ -18,8 +18,30 @@ export default async function AccountPage() {
     query(`SELECT f.product_id,p.name,p.slug,(SELECT pi.url FROM product_images pi WHERE pi.product_id=p.id ORDER BY pi.is_primary DESC,pi.sort_order ASC,pi.id ASC LIMIT 1) AS thumbnail_url FROM favorites f INNER JOIN products p ON p.id=f.product_id AND p.deleted_at IS NULL WHERE f.user_id=? ORDER BY f.created_at DESC LIMIT 4`, [user.id]),
   ]);
   return <main dir="rtl" className="store-shell py-7 sm:py-10">
-    <header className="border-b border-[var(--border)] bg-white px-1 pb-8 sm:pb-10"><div><p className="text-[10px] font-black text-[var(--brand)]">فضای شخصی شما</p><h1 className="mt-2 text-3xl font-black tracking-tight">سلام {profile?.firstName || 'دوست عزیز'} 👋</h1><p className="mt-2 max-w-2xl text-[11px] leading-7 text-slate-500">سفارش‌ها، علاقه‌مندی‌ها، اطلاعات شخصی و آدرس‌های خود را از یکجا مدیریت کنید.</p><div className="mt-6 flex flex-wrap gap-2"><Link href="/orders" className="rounded-[11px] bg-slate-950 px-4 py-2.5 text-[10px] font-black text-white transition hover:bg-[var(--brand)]">سفارش‌های من</Link><Link href="/account/profile" className="rounded-[11px] border border-[var(--border)] px-4 py-2.5 text-[10px] font-black transition hover:border-slate-300">ویرایش پروفایل</Link></div></div></header>
-    <div className="mt-5 grid gap-3 sm:grid-cols-3"><Stat value={orders.length} label="سفارش اخیر"/><Stat value={addresses.length} label="آدرس ثبت‌شده"/><Stat value={favorites.length} label="علاقه‌مندی"/></div>
+    <header className="border-b border-[var(--border)] bg-white px-1 pb-8 sm:pb-10">
+      <div>
+        <p className="text-[10px] font-black text-[var(--brand)]">فضای شخصی شما</p>
+        <h1 className="mt-2 text-3xl font-black tracking-tight">سلام {profile?.firstName || 'دوست عزیز'} 👋</h1>
+        <p className="mt-2 max-w-2xl text-[11px] leading-7 text-slate-500">سفارش‌ها، علاقه‌مندی‌ها، اطلاعات شخصی و آدرس‌های خود را از یکجا مدیریت کنید.</p>
+
+        <div className="mt-6 flex flex-wrap gap-2">
+          {/* ✅ FIXED: Replaced bg-slate-950 with Outline style (White bg + Red border + Red text) */}
+          <Link
+              href="/orders"
+              className="rounded-[11px] bg-white border-2 border-[var(--brand)] px-4 py-2.5 text-[10px] font-black text-[var(--brand)] transition hover:bg-[var(--brand)] hover:text-white"
+          >
+            سفارش‌های من
+          </Link>
+
+          <Link
+              href="/account/profile"
+              className="rounded-[11px] border border-[var(--border)] px-4 py-2.5 text-[10px] font-black transition hover:border-slate-300"
+          >
+            ویرایش پروفایل
+          </Link>
+        </div>
+      </div>
+    </header>    <div className="mt-5 grid gap-3 sm:grid-cols-3"><Stat value={orders.length} label="سفارش اخیر"/><Stat value={addresses.length} label="آدرس ثبت‌شده"/><Stat value={favorites.length} label="علاقه‌مندی"/></div>
     <div className="mt-5 grid gap-5 lg:grid-cols-[1.15fr_.85fr]">
       <section className="border border-[var(--border)] bg-white p-5 shadow-[0_10px_30px_rgba(23,23,23,.025)] sm:p-6"><div className="flex items-center justify-between"><div><p className="text-[9px] font-black text-[var(--brand)]">آخرین فعالیت</p><h2 className="mt-1 text-lg font-black">سفارش‌های اخیر</h2></div><Link href="/orders" className="text-[10px] font-black text-slate-400 hover:text-[var(--brand)]">مشاهده همه ←</Link></div><div className="mt-5 divide-y divide-[var(--border)]">{orders.map((o) => <Link href={`/orders/${o.id}`} key={o.id} className="group flex items-center gap-4 py-4 first:pt-0 last:pb-0"><div className="grid h-9 w-9 shrink-0 place-items-center border border-[var(--border)] bg-[#fafaf8] text-xs">▤</div><div className="min-w-0 flex-1"><p className="truncate font-mono text-[10px] font-black">{o.order_number}</p><p className="mt-1 text-[9px] text-slate-400">{orderStatus[o.status] || o.status}</p></div><strong className="shrink-0 text-[10px]">{money(o.total_amount)} تومان</strong><span aria-hidden="true" className="text-[10px] text-slate-300 transition group-hover:text-[var(--brand)]">←</span></Link>)}{!orders.length && <Empty label="شروع خرید" href="/products"/>}</div></section>
       <section className="border border-[var(--border)] bg-white p-5 shadow-[0_10px_30px_rgba(23,23,23,.025)] sm:p-6"><div className="flex items-center justify-between"><div><p className="text-[9px] font-black text-[var(--brand)]">اطلاعات حساب</p><h2 className="mt-1 text-lg font-black">مشخصات شخصی</h2></div><Link href="/account/profile" className="text-[10px] font-black text-slate-400 hover:text-[var(--brand)]">ویرایش</Link></div><div className="mt-5 grid gap-3 text-[10px] sm:grid-cols-2"><Info label="نام" value={[profile?.firstName, profile?.lastName].filter(Boolean).join(' ') || 'ثبت نشده'}/><Info label="ایمیل" value={profile?.email || '—'}/><Info label="تلفن" value={profile?.phone || '—'}/><Info label="آدرس‌ها" value={`${addresses.length.toLocaleString('fa-IR')} آدرس`}/></div></section>
