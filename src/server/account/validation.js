@@ -1,4 +1,4 @@
-const PHONE_PATTERN = /^\+?[1-9]\d{9,14}$/;
+const PHONE_PATTERN = /^(?:\+?[1-9]\d{9,14}|09\d{9})$/;
 
 function text(value, field, maxLength) {
   if (typeof value !== 'string' || value.trim().length === 0 || value.trim().length > maxLength) {
