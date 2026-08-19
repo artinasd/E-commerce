@@ -19,7 +19,7 @@ export default function ProductCard({ product }) {
         <Link href={`/products/${product.slug}`} className="block" aria-label={product.name}>
           <div className="relative aspect-[.92] overflow-hidden bg-[#f5f4f0]">
             {image ? (
-              <img src={image} alt={product.name} loading="lazy" className="h-full w-full object-cover transition duration-500 ease-out group-hover:scale-[1.035]" />
+              <img src={image} alt={product.name} loading="lazy" className="h-full w-full object-contain transition duration-500 ease-out group-hover:scale-[1.035]" />
             ) : (
               <div className="flex h-full items-center justify-center px-6 text-center text-sm font-bold text-slate-400">تصویری برای این محصول ثبت نشده</div>
             )}
