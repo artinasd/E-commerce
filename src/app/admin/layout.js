@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { requireRole } from '../../lib/auth/session.js';
 
-const nav = [['داشبورد','/admin','⌂'],['محصولات','/admin/products','▦'],['برندها و دسته‌بندی‌ها','/admin/catalog','◇'],['نظرات','/admin/reviews','◌'],['موجودی','/admin/inventory','▤'],['سفارش‌ها','/admin/orders','↗'],['مشتریان','/admin/customers','◎']];
+const nav = [['داشبورد','/admin','⌂'],['محصولات','/admin/products','▦'],['برندها و دسته‌بندی‌ها','/admin/catalog','◇'],['نظرات','/admin/reviews','◌'],['موجودی','/admin/inventory','▤'],['ارسال و هزینه‌ها','/admin/shipping','▱'],['سفارش‌ها','/admin/orders','↗'],['مشتریان','/admin/customers','◎']];
 
 export default async function AdminLayout({ children }) {
   await requireRole(['ADMIN','SUPER_ADMIN']);
