@@ -1,0 +1,5 @@
+ALTER TABLE brands
+  MODIFY logo_url MEDIUMTEXT NULL;
+
+ALTER TABLE categories
+  MODIFY image_url MEDIUMTEXT NULL;
