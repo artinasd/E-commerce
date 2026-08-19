@@ -11,7 +11,8 @@ export default function ProductCard({ product }) {
   const rating = product.average_rating ?? product.rating;
   const reviewCount = Number(product.review_count || 0);
   const hasQuantity = product.available_quantity !== null && product.available_quantity !== undefined && product.available_quantity !== '';
-  const inStock = hasQuantity ? Number(product.available_quantity) > 0 : product.in_stock === true;
+  const explicitStockState = typeof product.in_stock === 'boolean' ? product.in_stock : null;
+  const isOutOfStock = hasQuantity ? Number(product.available_quantity) <= 0 : explicitStockState === false;
 
   return (
     <article className="group relative min-w-0 overflow-hidden border border-[var(--border)] bg-white transition duration-300 hover:-translate-y-1 hover:border-slate-300 hover:shadow-[0_22px_50px_rgba(23,23,23,.09)]">
@@ -29,7 +30,7 @@ export default function ProductCard({ product }) {
         <div className="absolute left-3 top-3 z-10"><FavoriteButton productId={product.id} /></div>
         <div className="absolute right-3 top-3 z-10 flex flex-col items-end gap-1.5">
           {discountPercent > 0 && <span className="bg-[var(--brand)] px-3 py-1.5 text-[10px] font-black text-white">{discountPercent.toLocaleString('fa-IR')}٪</span>}
-          {!inStock && <span className="bg-white/95 px-3 py-1.5 text-[10px] font-black text-slate-600 shadow-sm">ناموجود</span>}
+          {isOutOfStock && <span className="bg-white/95 px-3 py-1.5 text-[10px] font-black text-slate-600 shadow-sm">ناموجود</span>}
         </div>
       </div>
       <div className="border-t border-[var(--border)] p-4 sm:p-5">
