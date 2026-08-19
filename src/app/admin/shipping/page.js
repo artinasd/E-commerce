@@ -4,9 +4,112 @@ import { useEffect, useState } from 'react';
 const money = (value) => new Intl.NumberFormat('fa-IR').format(Number(value || 0));
 
 export default function AdminShippingPage() {
-  const [methods, setMethods] = useState([]); const [state, setState] = useState('در حال دریافت…'); const [saving, setSaving] = useState(null);
-  async function load() { const r = await fetch('/api/admin/shipping', { cache:'no-store' }); const d = await r.json(); if (!r.ok) throw new Error(d?.error?.message || 'خطا در دریافت روش‌های ارسال'); setMethods((d.data?.shippingMethods || []).map(x => ({ ...x, base_amount: String(x.base_amount ?? 0), free_shipping_minimum: x.free_shipping_minimum == null ? '' : String(x.free_shipping_minimum) }))); setState(''); }
-  useEffect(() => { load().catch(e => setState(e.message)); }, []);
-  async function save(method) { setSaving(method.id); setState(''); try { const r = await fetch(`/api/admin/shipping/${method.id}`, { method:'PATCH', headers:{'content-type':'application/json'}, body:JSON.stringify({ baseAmount:method.base_amount, freeShippingMinimum:method.free_shipping_minimum }) }); const d = await r.json(); if (!r.ok) throw new Error(d?.error?.message || 'ذخیره نشد'); setState(`هزینه «${method.name}» با موفقیت ذخیره شد.`); await load(); } catch(e) { setState(e.message); } finally { setSaving(null); } }
-  return <section dir="rtl" className="space-y-6"><div><p className="text-sm font-semibold text-slate-500">تنظیمات فروشگاه</p><h1 className="mt-1 text-3xl font-black">هزینه ارسال</h1><p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">هزینه روش‌های ارسال را از اینجا تعیین کنید. مبلغ‌ها به تومان هستند و مستقیماً در محاسبه نهایی سفارش استفاده می‌شوند.</p></div>{state && <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm font-bold text-slate-700">{state}</div>}<div className="grid gap-5">{methods.map(method => <article key={method.id} className="rounded-2xl border border-[var(--border)] bg-white p-6 shadow-sm"><div className="flex flex-wrap items-start justify-between gap-4"><div><h2 className="text-xl font-black">{method.name}</h2><p className="mt-1 text-sm text-slate-500">{method.description || method.code}</p></div><span className={`px-3 py-1.5 text-xs font-black ${method.is_active ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>{method.is_active ? 'فعال' : 'غیرفعال'}</span></div><div className="mt-6 grid gap-4 md:grid-cols-2"><label className="grid gap-2 text-sm font-bold">هزینه پایه ارسال (تومان)<input type="number" min="0" step="1" value={method.base_amount} onChange={e=>setMethods(xs=>xs.map(x=>x.id===method.id?{...x,base_amount:e.target.value}:x))} className="rounded-xl border px-4 py-3 text-base font-bold outline-none focus:ring-2"/><span className="text-xs font-normal text-slate-400">مثال: {money(method.base_amount)} تومان</span></label><label className="grid gap-2 text-sm font-bold">حداقل مبلغ برای ارسال رایگان <span className="font-normal text-slate-400">اختیاری</span><input type="number" min="0" step="1" value={method.free_shipping_minimum} onChange={e=>setMethods(xs=>xs.map(x=>x.id===method.id?{...x,free_shipping_minimum:e.target.value}:x))} className="rounded-xl border px-4 py-3 text-base font-bold outline-none focus:ring-2" placeholder="مثلاً ۲,۰۰۰,۰۰۰"/><span className="text-xs font-normal text-slate-400">خالی بگذارید تا ارسال رایگان بر اساس مبلغ فعال نباشد.</span></label></div><div className="mt-5 flex justify-end"><button onClick={()=>save(method)} disabled={saving===method.id} className="rounded-xl bg-slate-950 px-6 py-3 text-sm font-black text-white disabled:opacity-50">{saving===method.id?'در حال ذخیره…':'ذخیره هزینه ارسال'}</button></div></article>)}{!methods.length && !state && <div className="rounded-2xl border bg-white p-8 text-center text-sm font-bold text-slate-500">روش ارسالی ثبت نشده است.</div>}</div></section>;
+  const [methods, setMethods] = useState([]);
+  const [state, setState] = useState('در حال دریافت…');
+  const [saving, setSaving] = useState(null);
+
+  async function fetchMethods() {
+    const r = await fetch('/api/admin/shipping', { cache: 'no-store' });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d?.error?.message || 'خطا در دریافت روش‌های ارسال');
+    return (d.data?.shippingMethods || []).map((x) => ({
+      ...x,
+      base_amount: String(x.base_amount ?? 0),
+      free_shipping_minimum: x.free_shipping_minimum == null ? '' : String(x.free_shipping_minimum),
+    }));
+  }
+
+  useEffect(() => {
+    let cancelled = false;
+
+    fetchMethods()
+      .then((nextMethods) => {
+        if (cancelled) return;
+        setMethods(nextMethods);
+        setState('');
+      })
+      .catch((error) => {
+        if (cancelled) return;
+        setState(error.message);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  async function load() {
+    const nextMethods = await fetchMethods();
+    setMethods(nextMethods);
+    setState('');
+  }
+
+  async function save(method) {
+    setSaving(method.id);
+    setState('');
+    try {
+      const r = await fetch(`/api/admin/shipping/${method.id}`, {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          baseAmount: method.base_amount,
+          freeShippingMinimum: method.free_shipping_minimum,
+        }),
+      });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d?.error?.message || 'ذخیره نشد');
+      setState(`هزینه «${method.name}» با موفقیت ذخیره شد.`);
+      await load();
+    } catch (e) {
+      setState(e.message);
+    } finally {
+      setSaving(null);
+    }
+  }
+
+  return (
+    <section dir="rtl" className="space-y-6">
+      <div>
+        <p className="text-sm font-semibold text-slate-500">تنظیمات فروشگاه</p>
+        <h1 className="mt-1 text-3xl font-black">هزینه ارسال</h1>
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
+          هزینه روش‌های ارسال را از اینجا تعیین کنید. مبلغ‌ها به تومان هستند و مستقیماً در محاسبه نهایی سفارش استفاده می‌شوند.
+        </p>
+      </div>
+      {state && <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm font-bold text-slate-700">{state}</div>}
+      <div className="grid gap-5">
+        {methods.map((method) => (
+          <article key={method.id} className="rounded-2xl border border-[var(--border)] bg-white p-6 shadow-sm">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-black">{method.name}</h2>
+                <p className="mt-1 text-sm text-slate-500">{method.description || method.code}</p>
+              </div>
+              <span className={`px-3 py-1.5 text-xs font-black ${method.is_active ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
+                {method.is_active ? 'فعال' : 'غیرفعال'}
+              </span>
+            </div>
+            <div className="mt-6 grid gap-4 md:grid-cols-2">
+              <label className="grid gap-2 text-sm font-bold">
+                هزینه پایه ارسال (تومان)
+                <input type="number" min="0" step="1" value={method.base_amount} onChange={(e) => setMethods((xs) => xs.map((x) => x.id === method.id ? { ...x, base_amount: e.target.value } : x))} className="rounded-xl border px-4 py-3 text-base font-bold outline-none focus:ring-2" />
+                <span className="text-xs font-normal text-slate-400">مثال: {money(method.base_amount)} تومان</span>
+              </label>
+              <label className="grid gap-2 text-sm font-bold">
+                حداقل مبلغ برای ارسال رایگان <span className="font-normal text-slate-400">اختیاری</span>
+                <input type="number" min="0" step="1" value={method.free_shipping_minimum} onChange={(e) => setMethods((xs) => xs.map((x) => x.id === method.id ? { ...x, free_shipping_minimum: e.target.value } : x))} className="rounded-xl border px-4 py-3 text-base font-bold outline-none focus:ring-2" placeholder="مثلاً ۲,۰۰۰,۰۰۰" />
+                <span className="text-xs font-normal text-slate-400">خالی بگذارید تا ارسال رایگان بر اساس مبلغ فعال نباشد.</span>
+              </label>
+            </div>
+            <div className="mt-5 flex justify-end">
+              <button onClick={() => save(method)} disabled={saving === method.id} className="rounded-xl bg-slate-950 px-6 py-3 text-sm font-black text-white disabled:opacity-50">
+                {saving === method.id ? 'در حال ذخیره…' : 'ذخیره هزینه ارسال'}
+              </button>
+            </div>
+          </article>
+        ))}
+        {!methods.length && !state && <div className="rounded-2xl border bg-white p-8 text-center text-sm font-bold text-slate-500">روش ارسالی ثبت نشده است.</div>}
+      </div>
+    </section>
+  );
 }
