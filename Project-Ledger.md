@@ -6,7 +6,7 @@ Iranian Persian E-Commerce Platform
 Production-oriented Persian RTL e-commerce for Iranian customers. Direction: lighter, faster, cleaner and more modern than conventional marketplace UX, inspired by leading Iranian marketplaces without copying them.
 
 ## Current Version
-0.9.5 — storefront mobile/navigation polish
+0.9.6 — storefront gallery and auth hardening
 
 ## Current Development Phase
 Phase 7 — Customer storefront and purchase journey / production hardening
@@ -15,9 +15,9 @@ Phase 7 — Customer storefront and purchase journey / production hardening
 `artinasd/E-commerce` — branch `main`
 
 ## Latest Verified Commit
-`77db220005208a0e4fd3c4030094e7bb610f9fe6` — `ui: use real category imagery on storefront home`
+`44993bf1c356cd7e1bda0bd8cff5fd6999fe4047` — `ui: simplify product gallery surfaces`
 
-Previous immediate commit: `a486231d44852359e49ef7c3ea3d2d6172aade41` — `ui: refine mobile storefront navigation`.
+Previous security commit: `f0a5f8ea5487a98661402ab6bad61a739ae0cbad` — `security: revoke session on logout`.
 
 ## Stack
 - Next.js 16 App Router
@@ -55,6 +55,8 @@ Important rules:
 - RBAC: CUSTOMER, ADMIN, SUPER_ADMIN.
 - Customer resources are scoped by authenticated user ID.
 - Sensitive mutations enforce authorization server-side.
+- Logout now revokes the current server-side session before clearing the cookie.
+- Password changes revoke all existing sessions for the user.
 
 ## Verified APIs
 ### Authentication
@@ -126,8 +128,9 @@ The admin has a dedicated `/admin/catalog` CMS page for creating brands and cate
 - Storefront visual direction is light-first with neutral surfaces and restrained rose branding.
 - Homepage composition and product-card hierarchy were previously redesigned.
 - Product discovery and filters were recently redesigned.
-- Mobile storefront navigation now exposes account/login access directly on small screens and keeps search/cart actions compact.
-- Homepage category discovery now uses the real `categories.image_url` when present instead of always rendering a generated initial tile.
+- Mobile storefront navigation exposes account/login access directly on small screens and keeps search/cart actions compact.
+- Homepage category discovery uses the real `categories.image_url` when present instead of always rendering a generated initial tile.
+- Product gallery thumbnails now use restrained square image surfaces instead of rounded mini-cards.
 - The existing design intentionally avoids excessive rounded cards, dark surfaces and generic dashboard-style decoration.
 
 ## Admin Completed
@@ -146,6 +149,7 @@ The admin has a dedicated `/admin/catalog` CMS page for creating brands and cate
 - Mobile navigation/search UX has received a first refinement but still needs broader page-by-page responsive verification.
 - Loading/error/empty-state polish and accessibility need a final pass.
 - Image optimization warnings should be reviewed and migrated to `next/image` where practical without breaking arbitrary external image URLs.
+- Product detail still contains a few legacy rounded surface patterns that should be reduced during the next visual pass.
 
 ## Production Hardening Remaining
 - Run a fresh local lint/build from the latest `main` checkout and address any newly surfaced errors.
