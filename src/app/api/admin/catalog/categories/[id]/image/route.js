@@ -1,8 +1,8 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
-import { updateAdminCategoryImage } from '../../../../../../../../server/admin/catalog.js';
-import { apiErrorResponse, apiSuccess } from '../../../../../../../../server/api/response.js';
+import { updateAdminCategoryImage } from '../../../../../../../server/admin/catalog.js';
+import { apiErrorResponse, apiSuccess } from '../../../../../../../server/api/response.js';
 
 export const runtime = 'nodejs';
 
