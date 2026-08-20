@@ -1,5 +1,5 @@
-import { updateAdminBrand } from '../../../../../../server/admin/catalog.js';
-import { apiErrorResponse, apiSuccess } from '../../../../../../server/api/response.js';
+import { updateAdminBrand } from '../../../../../../../server/admin/catalog.js';
+import { apiErrorResponse, apiSuccess } from '../../../../../../../server/api/response.js';
 
 export async function PATCH(request, { params }) {
   try {
