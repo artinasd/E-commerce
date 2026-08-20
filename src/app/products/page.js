@@ -35,7 +35,7 @@ export default async function ProductsPage({ searchParams }) {
   const params = await searchParams;
   const [result, categories, brands] = await Promise.all([
     getProducts(params),
-    getCategories(),
+    getCategories({ all: true }),
     getBrands({ limit: 100 }),
   ]);
   const products = result.products || [];
@@ -76,7 +76,7 @@ export default async function ProductsPage({ searchParams }) {
           <div className="flex items-center justify-between border-b border-[var(--border)] pb-4"><h2 className="text-[11px] font-black">فیلترها</h2>{activeFilterCount > 0 && <span className="text-[9px] font-black text-[var(--brand)]">{activeFilterCount} فعال</span>}</div>
           <form method="get" className="space-y-5 pt-4">
             {params.search ? <input type="hidden" name="search" value={params.search} /> : null}<input type="hidden" name="sort" value={params.sort || 'created_at'} /><input type="hidden" name="direction" value={params.direction || 'desc'} />
-            <label className="grid gap-2 text-[10px] font-black text-slate-500">دسته‌بندی<select name="category" defaultValue={params.category || ''} className="h-10 rounded-[10px] border border-[var(--border)] bg-white px-3 text-[10px] font-bold text-slate-700 outline-none focus:border-[var(--brand)]"><option value="">همه دسته‌بندی‌ها</option>{categories.map((category) => <option key={category.id} value={category.slug}>{category.name}</option>)}</select></label>
+            <label className="grid gap-2 text-[10px] font-black text-slate-500">دسته‌بندی<select name="category" defaultValue={params.category || ''} className="h-10 rounded-[10px] border border-[var(--border)] bg-white px-3 text-[10px] font-bold text-slate-700 outline-none focus:border-[var(--brand)]"><option value="">همه دسته‌بندی‌ها</option>{categories.map((category) => <option key={category.id} value={category.slug}>{category.parent_id ? `↳ ${category.name}` : category.name}</option>)}</select></label>
             <label className="grid gap-2 text-[10px] font-black text-slate-500">برند<select name="brand" defaultValue={params.brand || ''} className="h-10 rounded-[10px] border border-[var(--border)] bg-white px-3 text-[10px] font-bold text-slate-700 outline-none focus:border-[var(--brand)]"><option value="">همه برندها</option>{brands.map((brand) => <option key={brand.id} value={brand.slug}>{brand.name}</option>)}</select></label>
             <div><p className="text-[10px] font-black text-slate-500">بازه قیمت (تومان)</p><div className="mt-2 grid grid-cols-2 gap-2"><input name="minPrice" inputMode="numeric" placeholder="از" defaultValue={params.minPrice || ''} className="h-10 rounded-[10px] border border-[var(--border)] px-2.5 text-[10px] outline-none focus:border-[var(--brand)]" /><input name="maxPrice" inputMode="numeric" placeholder="تا" defaultValue={params.maxPrice || ''} className="h-10 rounded-[10px] border border-[var(--border)] px-2.5 text-[10px] outline-none focus:border-[var(--brand)]" /></div></div>
             <label className="flex cursor-pointer items-center gap-2.5 border-t border-[var(--border)] pt-4 text-[10px] font-bold text-slate-600"><input type="checkbox" name="inStock" value="1" defaultChecked={['1', 'true', 'yes'].includes(String(params.inStock || '').toLowerCase())} className="h-4 w-4 accent-[var(--brand)]" />فقط کالاهای موجود</label>
