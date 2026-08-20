@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 
@@ -123,7 +124,7 @@ export default function AdminCatalogPage() {
         <div className="grid gap-3">
           <label className="text-sm font-bold">لوگوی برند <span className="font-normal text-slate-400">اختیاری · JPG, PNG, WEBP, GIF · حداکثر ۵MB</span></label>
           <div className="flex items-center gap-4 rounded-xl border border-dashed p-4">
-            {brandPreview && <img src={brandPreview} alt="پیش‌نمایش لوگو" className="h-16 w-16 rounded-xl object-contain bg-slate-50" />}
+            {brandPreview && <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-slate-50"><Image src={brandPreview} alt="پیش‌نمایش لوگو" fill sizes="64px" unoptimized className="object-contain" /></div>}
             <button type="button" onClick={() => brandInputRef.current?.click()} className="rounded-xl border px-4 py-3 text-sm font-bold">{brandFile ? 'تغییر تصویر' : 'انتخاب تصویر'}</button>
             {brandFile && <span className="min-w-0 truncate text-xs text-slate-500">{brandFile.name}</span>}
             <input ref={brandInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={(e) => selectImage('brands', e.target.files?.[0])} className="hidden" />
@@ -142,7 +143,7 @@ export default function AdminCatalogPage() {
         <div className="grid gap-3">
           <label className="text-sm font-bold">تصویر دسته‌بندی <span className="font-normal text-slate-400">اختیاری · JPG, PNG, WEBP, GIF · حداکثر ۵MB</span></label>
           <div className="flex items-center gap-4 rounded-xl border border-dashed p-4">
-            {categoryPreview && <img src={categoryPreview} alt="پیش‌نمایش دسته‌بندی" className="h-16 w-16 rounded-xl object-cover bg-slate-50" />}
+            {categoryPreview && <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-slate-50"><Image src={categoryPreview} alt="پیش‌نمایش دسته‌بندی" fill sizes="64px" unoptimized className="object-cover" /></div>}
             <button type="button" onClick={() => categoryInputRef.current?.click()} className="rounded-xl border px-4 py-3 text-sm font-bold">{categoryFile ? 'تغییر تصویر' : 'انتخاب تصویر'}</button>
             {categoryFile && <span className="min-w-0 truncate text-xs text-slate-500">{categoryFile.name}</span>}
             <input ref={categoryInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={(e) => selectImage('categories', e.target.files?.[0])} className="hidden" />
@@ -155,8 +156,8 @@ export default function AdminCatalogPage() {
     </div>
 
     <div className="grid gap-6 lg:grid-cols-2">
-      <div className="rounded-2xl border bg-white p-6 shadow-sm"><h2 className="text-lg font-black">برندهای موجود ({brands.length.toLocaleString('fa-IR')})</h2><div className="mt-4 divide-y">{brands.map((item) => <div key={item.id} className="flex items-center gap-3 py-3">{item.logo_url && <img src={item.logo_url} alt="" className="h-10 w-10 rounded-lg object-contain bg-slate-50" />}<span className="font-bold">{item.name}</span><span className="mr-auto text-xs text-slate-400">{item.slug}</span></div>)}{!brands.length && <p className="py-6 text-sm text-slate-500">هنوز برندی ایجاد نشده است.</p>}</div></div>
-      <div className="rounded-2xl border bg-white p-6 shadow-sm"><h2 className="text-lg font-black">دسته‌بندی‌های موجود ({categories.length.toLocaleString('fa-IR')})</h2><div className="mt-4 divide-y">{categories.map((item) => <div key={item.id} className="flex items-center gap-3 py-3">{item.image_url && <img src={item.image_url} alt="" className="h-10 w-10 rounded-lg object-cover bg-slate-50" />}<span className="font-bold">{item.name}</span><span className="mr-auto text-xs text-slate-400">{item.slug}</span></div>)}{!categories.length && <p className="py-6 text-sm text-slate-500">هنوز دسته‌بندی ایجاد نشده است.</p>}</div></div>
+      <div className="rounded-2xl border bg-white p-6 shadow-sm"><h2 className="text-lg font-black">برندهای موجود ({brands.length.toLocaleString('fa-IR')})</h2><div className="mt-4 divide-y">{brands.map((item) => <div key={item.id} className="flex items-center gap-3 py-3">{item.logo_url && <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-slate-50"><Image src={item.logo_url} alt="" fill sizes="40px" unoptimized className="object-contain" /></div>}<span className="font-bold">{item.name}</span><span className="mr-auto text-xs text-slate-400">{item.slug}</span></div>)}{!brands.length && <p className="py-6 text-sm text-slate-500">هنوز برندی ایجاد نشده است.</p>}</div></div>
+      <div className="rounded-2xl border bg-white p-6 shadow-sm"><h2 className="text-lg font-black">دسته‌بندی‌های موجود ({categories.length.toLocaleString('fa-IR')})</h2><div className="mt-4 divide-y">{categories.map((item) => <div key={item.id} className="flex items-center gap-3 py-3">{item.image_url && <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-slate-50"><Image src={item.image_url} alt="" fill sizes="40px" unoptimized className="object-cover" /></div>}<span className="font-bold">{item.name}</span><span className="mr-auto text-xs text-slate-400">{item.slug}</span></div>)}{!categories.length && <p className="py-6 text-sm text-slate-500">هنوز دسته‌بندی ایجاد نشده است.</p>}</div></div>
     </div>
   </section>;
 }
