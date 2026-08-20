@@ -1,5 +1,7 @@
 import { query, withTransaction } from '../db/connection.js';
 import { requireRole } from '../../lib/auth/session.js';
+import { releaseStock } from '../inventory/service.js';
+import { assertValidOrderStatusTransition } from '../orders/status.js';
 
 const roles = () => requireRole(['ADMIN', 'SUPER_ADMIN']);
 const statuses = ['PENDING', 'CONFIRMED', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED', 'REFUNDED'];
@@ -24,18 +26,40 @@ export async function getAdminOrder(orderId) {
 }
 
 export async function setAdminOrderStatus(orderId, status) {
-  await roles();
+  const actor = await roles();
   if (!statuses.includes(status)) throw new Error('Invalid order status.');
   return withTransaction(async (connection) => {
-    const [rows] = await connection.execute('SELECT status, payment_status FROM orders WHERE id=? FOR UPDATE', [orderId]);
+    const [rows] = await connection.execute('SELECT id, status, payment_status FROM orders WHERE id=? FOR UPDATE', [orderId]);
     const order = rows[0]; if (!order) throw new Error('Order not found.');
-    if (order.status === 'DELIVERED' || order.status === 'CANCELLED' || order.status === 'REFUNDED') throw new Error('Finalized orders cannot be changed.');
-    if (status === 'CONFIRMED' && order.payment_status !== 'PAID') throw new Error('Only paid orders can be confirmed.');
-    if (status === 'PROCESSING' && !['CONFIRMED', 'PROCESSING'].includes(order.status)) throw new Error('Order must be confirmed first.');
-    if (status === 'SHIPPED' && !['PROCESSING', 'SHIPPED'].includes(order.status)) throw new Error('Order must be processing first.');
-    if (status === 'DELIVERED' && order.status !== 'SHIPPED') throw new Error('Order must be shipped first.');
-    if (status === 'CANCELLED' && order.payment_status === 'PAID') throw new Error('Paid orders require refund handling before cancellation.');
-    await connection.execute('UPDATE orders SET status=? WHERE id=?', [status, orderId]);
+
+    assertValidOrderStatusTransition(order.status, status);
+
+    if (status === 'CONFIRMED' && order.payment_status !== 'PAID') {
+      throw new Error('Only paid orders can be confirmed.');
+    }
+    if (status === 'CANCELLED' && order.payment_status === 'PAID') {
+      throw new Error('Paid orders require refund handling before cancellation.');
+    }
+    if (status === 'REFUNDED' && order.payment_status !== 'PAID') {
+      throw new Error('Only paid orders can be refunded.');
+    }
+
+    if (status === 'CANCELLED') {
+      const [items] = await connection.execute(
+        'SELECT variant_id, quantity FROM order_items WHERE order_id=?',
+        [orderId],
+      );
+      for (const item of items) {
+        await releaseStock(connection, item.variant_id, Number(item.quantity));
+      }
+    }
+
+    await connection.execute('UPDATE orders SET status=?, updated_at=CURRENT_TIMESTAMP WHERE id=?', [status, orderId]);
+    await connection.execute(
+      `INSERT INTO audit_logs (user_id, action, entity_type, entity_id, metadata)
+       VALUES (?, ?, 'ORDER', ?, ?)`,
+      [actor.id, 'ORDER_STATUS_CHANGED', orderId, JSON.stringify({ from: order.status, to: status })],
+    );
     return { id: Number(orderId), status };
   });
 }
