@@ -44,6 +44,23 @@ export async function createAdminBrand({ name, slug, description = null, logoUrl
   return { id: result.insertId, name: normalizedName, slug: normalizedSlug, description: desc, logo_url: logo, is_active: active };
 }
 
+export async function updateAdminBrand(brandId, { name, slug, description = null, logoUrl, isActive = true } = {}) {
+  await admin();
+  const id = Number(brandId);
+  if (!Number.isSafeInteger(id) || id < 1) throw new Error('شناسه برند نامعتبر است.');
+  const normalizedName = normalizeText(name, 'نام برند', 150);
+  const normalizedSlug = normalizeSlug(slug, normalizedName);
+  const existing = await query('SELECT id FROM brands WHERE slug = ? AND id <> ? AND deleted_at IS NULL LIMIT 1', [normalizedSlug, id]);
+  if (existing[0]) throw new Error('این slug برای یک برند دیگر استفاده شده است.');
+  const current = await query('SELECT id, logo_url FROM brands WHERE id = ? AND deleted_at IS NULL LIMIT 1', [id]);
+  if (!current[0]) throw new Error('برند پیدا نشد.');
+  const logo = logoUrl === undefined ? current[0].logo_url : (typeof logoUrl === 'string' && logoUrl.trim() ? logoUrl.trim().slice(0, 1000) : null);
+  const desc = typeof description === 'string' && description.trim() ? description.trim().slice(0, 65535) : null;
+  const active = Boolean(isActive);
+  await query('UPDATE brands SET name = ?, slug = ?, description = ?, logo_url = ?, is_active = ? WHERE id = ? AND deleted_at IS NULL', [normalizedName, normalizedSlug, desc, logo, active, id]);
+  return { id, name: normalizedName, slug: normalizedSlug, description: desc, logo_url: logo, is_active: active };
+}
+
 export async function updateAdminBrandLogo(brandId, logoUrl) {
   await admin();
   const id = Number(brandId);
@@ -74,6 +91,32 @@ export async function createAdminCategory({ name, slug, description = null, imag
   const active = Boolean(isActive);
   const result = await query('INSERT INTO categories (parent_id, name, slug, description, image_url, is_active, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?)', [parent, normalizedName, normalizedSlug, desc, image, active, order]);
   return { id: result.insertId, parent_id: parent, name: normalizedName, slug: normalizedSlug, description: desc, image_url: image, is_active: active, sort_order: order };
+}
+
+export async function updateAdminCategory(categoryId, { name, slug, description = null, imageUrl, parentId = null, isActive = true, sortOrder = 0 } = {}) {
+  await admin();
+  const id = Number(categoryId);
+  if (!Number.isSafeInteger(id) || id < 1) throw new Error('شناسه دسته‌بندی نامعتبر است.');
+  const normalizedName = normalizeText(name, 'نام دسته‌بندی', 150);
+  const normalizedSlug = normalizeSlug(slug, normalizedName);
+  const parent = parentId == null || parentId === '' ? null : Number(parentId);
+  if (parent !== null && (!Number.isSafeInteger(parent) || parent < 1)) throw new Error('دسته‌بندی والد نامعتبر است.');
+  if (parent === id) throw new Error('دسته‌بندی نمی‌تواند والد خودش باشد.');
+  if (parent !== null) {
+    const parentRows = await query('SELECT id FROM categories WHERE id = ? AND deleted_at IS NULL LIMIT 1', [parent]);
+    if (!parentRows[0]) throw new Error('دسته‌بندی والد پیدا نشد.');
+  }
+  const order = Number(sortOrder);
+  if (!Number.isInteger(order)) throw new Error('ترتیب نامعتبر است.');
+  const existing = await query('SELECT id FROM categories WHERE slug = ? AND id <> ? AND deleted_at IS NULL LIMIT 1', [normalizedSlug, id]);
+  if (existing[0]) throw new Error('این slug برای یک دسته‌بندی دیگر استفاده شده است.');
+  const current = await query('SELECT id, image_url FROM categories WHERE id = ? AND deleted_at IS NULL LIMIT 1', [id]);
+  if (!current[0]) throw new Error('دسته‌بندی پیدا نشد.');
+  const image = imageUrl === undefined ? current[0].image_url : (typeof imageUrl === 'string' && imageUrl.trim() ? imageUrl.trim().slice(0, 1000) : null);
+  const desc = typeof description === 'string' && description.trim() ? description.trim().slice(0, 65535) : null;
+  const active = Boolean(isActive);
+  await query('UPDATE categories SET parent_id = ?, name = ?, slug = ?, description = ?, image_url = ?, is_active = ?, sort_order = ? WHERE id = ? AND deleted_at IS NULL', [parent, normalizedName, normalizedSlug, desc, image, active, order, id]);
+  return { id, parent_id: parent, name: normalizedName, slug: normalizedSlug, description: desc, image_url: image, is_active: active, sort_order: order };
 }
 
 export async function updateAdminCategoryImage(categoryId, imageUrl) {
