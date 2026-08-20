@@ -18,14 +18,15 @@ function buildCategoryTree(categories) {
 function ChildMenuItem({ category, childrenByParent }) {
   const children = childrenByParent.get(Number(category.id)) || [];
   return <div className="group/item relative">
-    <Link href={`/products?category=${encodeURIComponent(category.slug)}`} className="flex items-center gap-3 px-4 py-3 text-right transition hover:bg-slate-50">
-      <span className="min-w-0 flex-1 truncate text-[11px] font-bold text-slate-700 group-hover/item:text-[var(--brand)]">{category.name}</span>
-      {children.length > 0 && <span className="text-[11px] text-slate-300 transition group-hover/item:text-[var(--brand)]">‹</span>}
+    <Link href={`/products?category=${encodeURIComponent(category.slug)}`} className="flex items-center gap-3 px-4 py-3.5 text-right transition-all duration-150 hover:bg-slate-50">
+      <span className="grid h-7 w-7 shrink-0 place-items-center border border-slate-100 bg-slate-50 text-[10px] font-black text-slate-400 transition-all group-hover/item:border-[var(--brand)]/15 group-hover/item:bg-[var(--brand)]/5 group-hover/item:text-[var(--brand)]">{category.name?.slice(0,1)}</span>
+      <span className="min-w-0 flex-1 truncate text-[11px] font-bold text-slate-700 group-hover/item:text-slate-950">{category.name}</span>
+      {children.length > 0 && <span className="grid h-6 w-6 shrink-0 place-items-center border border-slate-100 text-[12px] text-slate-300 transition-all group-hover/item:border-[var(--brand)]/20 group-hover/item:text-[var(--brand)]">‹</span>}
     </Link>
-    {children.length > 0 && <div className="invisible absolute right-full top-0 z-50 mr-2 w-52 translate-x-2 opacity-0 transition-all duration-150 group-hover/item:visible group-hover/item:translate-x-0 group-hover/item:opacity-100">
-      <div className="overflow-hidden border border-slate-200 bg-white shadow-[0_18px_45px_rgba(15,23,42,0.12)]">
-        <div className="border-b border-slate-100 px-4 py-3"><p className="text-[9px] font-black uppercase tracking-widest text-[var(--brand)]">زیرمجموعه</p><p className="mt-1 truncate text-xs font-black text-slate-900">{category.name}</p></div>
-        {children.map((child) => <ChildMenuItem key={child.id} category={child} childrenByParent={childrenByParent}/>)}
+    {children.length > 0 && <div className="invisible absolute right-full top-0 z-50 mr-2 w-56 translate-x-2 opacity-0 transition-all duration-200 group-hover/item:visible group-hover/item:translate-x-0 group-hover/item:opacity-100">
+      <div className="overflow-hidden border border-slate-200/90 bg-white shadow-[0_22px_55px_rgba(15,23,42,0.15)]">
+        <div className="border-b border-slate-100 bg-slate-50/70 px-4 py-3"><p className="text-[8px] font-black tracking-[0.18em] text-[var(--brand)]">زیرمجموعه</p><p className="mt-1 truncate text-xs font-black text-slate-900">{category.name}</p></div>
+        <div className="py-1">{children.map((child) => <ChildMenuItem key={child.id} category={child} childrenByParent={childrenByParent}/>)}</div>
       </div>
     </div>}
   </div>;
@@ -37,20 +38,21 @@ function CategoryCard({ category, childrenByParent }) {
     <Link href={`/products?category=${encodeURIComponent(category.slug)}`} className="group block bg-white">
       <div className="relative aspect-[1.15] overflow-hidden bg-[#f5f5f2]">
         {category.image_url ? <Image src={category.image_url} alt={category.name} fill sizes="(max-width:640px) 48vw, (max-width:1024px) 32vw, 20vw" className="object-cover transition duration-500 group-hover:scale-[1.04]"/> : <div className="grid h-full place-items-center text-3xl font-black text-slate-200">{category.name?.slice(0,1)}</div>}
-        {children.length > 0 && <span aria-hidden="true" className="absolute bottom-3 left-3 grid h-8 w-8 place-items-center border border-white/70 bg-white/90 text-slate-500 shadow-sm backdrop-blur transition group-hover:bg-white group-hover:text-[var(--brand)]">⌄</span>}
+        {children.length > 0 && <div className="absolute bottom-3 left-3 grid h-9 w-9 place-items-center border border-white/80 bg-white/90 text-slate-500 shadow-[0_6px_18px_rgba(15,23,42,0.12)] backdrop-blur transition-all duration-200 group-hover:scale-105 group-hover:border-white group-hover:bg-white group-hover:text-[var(--brand)]" aria-hidden="true"><span className="relative -top-px text-sm font-black">⌄</span></div>}
       </div>
       <div className="flex items-start justify-between gap-3 border-b border-[var(--border)] py-4">
         <div className="min-w-0"><h2 className="truncate text-[11px] font-black">{category.name}</h2>{category.description && <p className="mt-1 line-clamp-1 text-[9px] text-slate-400">{category.description}</p>}</div>
         <span className="pt-0.5 text-xs text-slate-300 transition group-hover:text-[var(--brand)]">←</span>
       </div>
     </Link>
-    {children.length > 0 && <div className="invisible absolute right-0 top-full z-40 mt-2 w-[min(21rem,calc(100vw-2rem))] translate-y-2 opacity-0 transition-all duration-200 group-hover/card:visible group-hover/card:translate-y-0 group-hover/card:opacity-100">
-      <div className="overflow-visible border border-slate-200 bg-white shadow-[0_24px_60px_rgba(15,23,42,0.14)]">
-        <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
-          <div><p className="text-[9px] font-black uppercase tracking-[0.16em] text-[var(--brand)]">دسته‌های مرتبط</p><p className="mt-1 text-sm font-black text-slate-900">{category.name}</p></div>
-          <span className="text-xs text-slate-300">{children.length} مورد</span>
+    {children.length > 0 && <div className="invisible absolute right-0 top-full z-40 mt-3 w-[min(23rem,calc(100vw-2rem))] translate-y-2 opacity-0 transition-all duration-200 group-hover/card:visible group-hover/card:translate-y-0 group-hover/card:opacity-100">
+      <div className="overflow-visible border border-slate-200/90 bg-white shadow-[0_28px_70px_rgba(15,23,42,0.16)]">
+        <div className="relative overflow-hidden border-b border-slate-100 bg-slate-50/70 px-5 py-4">
+          <div className="absolute right-0 top-0 h-full w-1 bg-[var(--brand)]" />
+          <div className="flex items-center justify-between gap-4"><div><p className="text-[8px] font-black tracking-[0.18em] text-[var(--brand)]">انتخاب دسته</p><p className="mt-1 text-sm font-black text-slate-950">{category.name}</p></div><span className="shrink-0 border border-slate-200 bg-white px-2.5 py-1 text-[9px] font-black text-slate-400">{children.length} زیرمجموعه</span></div>
         </div>
         <div className="py-1">{children.map((child) => <ChildMenuItem key={child.id} category={child} childrenByParent={childrenByParent}/>)}</div>
+        <Link href={`/products?category=${encodeURIComponent(category.slug)}`} className="flex items-center justify-between border-t border-slate-100 px-5 py-3 text-[9px] font-black text-slate-400 transition hover:bg-slate-50 hover:text-[var(--brand)]"><span>مشاهده همه محصولات این دسته</span><span>←</span></Link>
       </div>
     </div>}
   </article>;
