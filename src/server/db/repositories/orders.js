@@ -48,11 +48,18 @@ export async function listOrdersForUser(userId, { limit = 20, offset = 0 } = {})
 
 export async function listOrderItems(orderId) {
   return query(
-    `SELECT id, order_id, variant_id, product_name, sku,
-            unit_price, quantity, discount_amount, line_total, created_at
-       FROM order_items
-      WHERE order_id = ?
-      ORDER BY id ASC`,
+    `SELECT oi.id, oi.order_id, oi.variant_id, oi.product_name, oi.sku,
+            oi.unit_price, oi.quantity, oi.discount_amount, oi.line_total, oi.created_at,
+            p.slug AS product_slug,
+            (SELECT pi.url FROM product_images pi
+              WHERE pi.product_id = p.id
+              ORDER BY pi.is_primary DESC, pi.sort_order ASC, pi.id ASC
+              LIMIT 1) AS product_image_url
+       FROM order_items oi
+       LEFT JOIN product_variants v ON v.id = oi.variant_id
+       LEFT JOIN products p ON p.id = v.product_id
+      WHERE oi.order_id = ?
+      ORDER BY oi.id ASC`,
     [orderId],
   );
 }
