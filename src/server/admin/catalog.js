@@ -21,6 +21,28 @@ function normalizeSlug(value, fallback) {
   return normalized;
 }
 
+async function assertCategoryParentDoesNotCycle(categoryId, parentId) {
+  if (parentId === null) return;
+
+  let currentId = parentId;
+  const visited = new Set([categoryId]);
+
+  while (currentId !== null) {
+    if (visited.has(currentId)) {
+      throw new Error('دسته‌بندی نمی‌تواند یکی از زیرمجموعه‌های خودش را به‌عنوان والد انتخاب کند.');
+    }
+    visited.add(currentId);
+
+    const rows = await query(
+      'SELECT id, parent_id FROM categories WHERE id = ? AND deleted_at IS NULL LIMIT 1',
+      [currentId],
+    );
+
+    if (!rows[0]) break;
+    currentId = rows[0].parent_id == null ? null : Number(rows[0].parent_id);
+  }
+}
+
 export async function listAdminCategories() {
   await admin();
   return query(`SELECT id, parent_id, name, slug, description, image_url, is_active, sort_order FROM categories WHERE deleted_at IS NULL ORDER BY sort_order ASC, name ASC`);
@@ -105,6 +127,7 @@ export async function updateAdminCategory(categoryId, { name, slug, description 
   if (parent !== null) {
     const parentRows = await query('SELECT id FROM categories WHERE id = ? AND deleted_at IS NULL LIMIT 1', [parent]);
     if (!parentRows[0]) throw new Error('دسته‌بندی والد پیدا نشد.');
+    await assertCategoryParentDoesNotCycle(id, parent);
   }
   const order = Number(sortOrder);
   if (!Number.isInteger(order)) throw new Error('ترتیب نامعتبر است.');
