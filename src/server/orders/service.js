@@ -2,12 +2,14 @@ import { withTransaction } from '../db/connection.js';
 import { releaseStock } from '../inventory/service.js';
 import { findOrderByIdForUser, listOrderItems, listOrdersForUser } from '../db/repositories/orders.js';
 import { assertValidOrderStatusTransition, canCustomerCancelOrder } from './status.js';
+import { expireExpiredPendingOrdersForUser } from './expiration.js';
 
 function money(value) {
   return Number(value);
 }
 
 export async function listUserOrders(userId, params) {
+  await expireExpiredPendingOrdersForUser(userId);
   const orders = await listOrdersForUser(userId, params);
   return {
     orders: orders.map((order) => ({
@@ -28,6 +30,7 @@ export async function listUserOrders(userId, params) {
 }
 
 export async function getUserOrder(userId, orderId) {
+  await expireExpiredPendingOrdersForUser(userId);
   const order = await findOrderByIdForUser(orderId, userId);
   if (!order) return null;
   const items = await listOrderItems(order.id);
