@@ -10,6 +10,27 @@ import {
   findBrandBySlug,
 } from '../db/repositories/catalog.js';
 
+function getCategoryTreeIds(categories, rootId) {
+  const childrenByParent = new Map();
+  for (const category of categories) {
+    const parentId = category.parent_id == null ? null : Number(category.parent_id);
+    if (!childrenByParent.has(parentId)) childrenByParent.set(parentId, []);
+    childrenByParent.get(parentId).push(Number(category.id));
+  }
+
+  const ids = [];
+  const queue = [Number(rootId)];
+  const seen = new Set();
+  while (queue.length) {
+    const id = queue.shift();
+    if (seen.has(id)) continue;
+    seen.add(id);
+    ids.push(id);
+    for (const childId of childrenByParent.get(id) || []) queue.push(childId);
+  }
+  return ids;
+}
+
 export async function getProducts(params = {}) {
   const page = Math.max(Number(params.page) || 1, 1);
   const limit = Math.min(Math.max(Number(params.limit) || 24, 1), 100);
@@ -17,8 +38,15 @@ export async function getProducts(params = {}) {
     params.categorySlug ? findCategoryBySlug(params.categorySlug) : null,
     params.brandSlug ? findBrandBySlug(params.brandSlug) : null,
   ]);
+
+  let categoryIds = null;
+  if (category?.id != null) {
+    const categories = await listCategories({ all: true, activeOnly: true });
+    categoryIds = getCategoryTreeIds(categories, category.id);
+  }
+
   const filters = {
-    categoryId: category?.id ?? null,
+    categoryIds,
     brandId: brand?.id ?? null,
     status: 'ACTIVE',
     search: params.search,
@@ -53,7 +81,7 @@ export async function getProductBySlug(slug) {
 }
 
 export async function getCategories(params = {}) {
-  return listCategories({ parentId: params.parentId ?? null, activeOnly: true });
+  return listCategories({ parentId: params.parentId ?? null, activeOnly: true, all: Boolean(params.all) });
 }
 
 export async function getCategoryBySlug(slug) {
