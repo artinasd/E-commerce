@@ -58,6 +58,8 @@ export async function getUserOrder(userId, orderId) {
       id: item.id,
       variantId: item.variant_id,
       productName: item.product_name,
+      productSlug: item.product_slug || null,
+      imageUrl: item.product_image_url || null,
       sku: item.sku,
       unitPrice: money(item.unit_price),
       quantity: Number(item.quantity),
