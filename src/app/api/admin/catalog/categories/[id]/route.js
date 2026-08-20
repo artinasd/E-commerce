@@ -1,5 +1,5 @@
-import { updateAdminCategory } from '../../../../../../server/admin/catalog.js';
-import { apiErrorResponse, apiSuccess } from '../../../../../../server/api/response.js';
+import { updateAdminCategory } from '../../../../../../../server/admin/catalog.js';
+import { apiErrorResponse, apiSuccess } from '../../../../../../../server/api/response.js';
 
 export async function PATCH(request, { params }) {
   try {
