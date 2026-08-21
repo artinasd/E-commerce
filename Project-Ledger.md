@@ -13,12 +13,13 @@ Phase 7 — Customer storefront / purchase journey / production hardening
 `artinasd/E-commerce` — `main`
 
 ## Latest Verified Commit
-`ea74d40a4c740e81413d64353f1832226501e728` — `Harden reconciliation cron authentication`
+`5298e371` — `Add Playwright E2E test scripts`
 
 Recent hardening:
-- `4c8811490e03da81d8aca119793cee43228bbca8` — validate admin product image URLs
+- `ea74d40a` — harden reconciliation cron authentication
+- `4c881149` — validate admin product image URLs
 - `98ea2f4f` — unify `/favorites` with `/account/wishlist`
-- `f0a5f8ea5487a98661402ab6bad61a739ae0cbad` — revoke session on logout
+- `f0a5f8ea` — revoke session on logout
 
 ## Stack
 - Next.js 16 App Router
@@ -30,6 +31,7 @@ Recent hardening:
 - Server-side HTTP-only sessions
 - Node crypto/scrypt authentication
 - npm
+- Playwright planned for production E2E coverage
 
 ## Architecture
 Backend: `Route Handler → authentication/validation → service → repository/transaction → MySQL`.
@@ -101,9 +103,14 @@ Canonical wishlist: `/account/wishlist`; `/favorites` remains a compatibility re
 - Admin image URL protocol validation
 - No obvious TODO/FIXME/debugger/console-log leftovers found in cleanup scan
 
+## E2E Testing
+- Added Playwright dependency and npm scripts: `test:e2e`, `test:e2e:ui`, `test:e2e:headed`, `test:e2e:report`.
+- Playwright configuration and critical-flow test suite still need to be added and installed locally with npm before execution.
+- Tests must use a dedicated test database/environment and must never mutate production data.
+
 ## Remaining Release-Candidate Work
-1. Run fresh `npm run lint` and `npm run build` from latest `main` checkout.
-2. Automated tests / end-to-end checkout and review tests.
+1. Run fresh `npm install`, `npm run lint` and `npm run build` from latest `main` checkout.
+2. Add Playwright configuration and production-critical E2E tests.
 3. Verify deployed reservation reconciliation lifecycle.
 4. Final rate-limiting/CSRF/security review where applicable.
 5. Performance/SEO audit.
