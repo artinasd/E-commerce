@@ -1,23 +1,24 @@
 # PROJECT LEDGER
 
 ## Project
-Iranian Persian E-Commerce Platform
-
-Production-oriented Persian RTL e-commerce for Iranian customers. Direction: lighter, faster, cleaner and more modern than conventional marketplace UX, inspired by leading Iranian marketplaces without copying them.
+Iranian Persian E-Commerce Platform — production-oriented Persian RTL e-commerce for Iranian customers.
 
 ## Current Version
-0.9.6 — storefront gallery and auth hardening
+0.9.7 — release-candidate hardening
 
-## Current Development Phase
-Phase 7 — Customer storefront and purchase journey / production hardening
+## Current Phase
+Phase 7 — Customer storefront / purchase journey / production hardening
 
 ## Repository
-`artinasd/E-commerce` — branch `main`
+`artinasd/E-commerce` — `main`
 
 ## Latest Verified Commit
-`44993bf1c356cd7e1bda0bd8cff5fd6999fe4047` — `ui: simplify product gallery surfaces`
+`ea74d40a4c740e81413d64353f1832226501e728` — `Harden reconciliation cron authentication`
 
-Previous security commit: `f0a5f8ea5487a98661402ab6bad61a739ae0cbad` — `security: revoke session on logout`.
+Recent hardening:
+- `4c8811490e03da81d8aca119793cee43228bbca8` — validate admin product image URLs
+- `98ea2f4f` — unify `/favorites` with `/account/wishlist`
+- `f0a5f8ea5487a98661402ab6bad61a739ae0cbad` — revoke session on logout
 
 ## Stack
 - Next.js 16 App Router
@@ -26,146 +27,95 @@ Previous security commit: `f0a5f8ea5487a98661402ab6bad61a739ae0cbad` — `securi
 - TailwindCSS 4
 - MySQL 8+
 - mysql2 with parameterized SQL
-- Application-managed HTTP-only sessions
+- Server-side HTTP-only sessions
 - Node crypto/scrypt authentication
 - npm
 
 ## Architecture
 Backend: `Route Handler → authentication/validation → service → repository/transaction → MySQL`.
-Frontend: Server Components for data-heavy pages; Client Components only for interactive state/actions.
-The client is never authoritative for pricing, inventory, cart persistence, authentication, checkout, or order creation.
+Frontend: server-first rendering with client components only where interaction requires them.
+The client is never authoritative for pricing, inventory, checkout, authentication, or order totals.
 
 ## Database
-`database/migrations/001_initial_schema.sql` defines users, sessions, categories, brands, products, product_variants, attributes, attribute_values, product_attributes, product_images, inventory, addresses, carts, cart_items, orders, order_items, payments, coupons, order_coupons, favorites, reviews and audit_logs.
-
-Additional migrations cover payment/inventory lifecycle, shipping methods, payment integrity, promotions and shipping.
+Existing MySQL schema is preserved. It includes users, sessions, catalog, variants, images, inventory, addresses, carts, orders, payments, coupons, favorites, reviews and audit logs, with additional lifecycle/promotion/shipping migrations.
 
 Important rules:
 - Monetary values are integer amounts.
-- Inventory is stored separately and reservations are tracked with `reserved_quantity`.
-- Orders store historical shipping/product/price snapshots.
-- Favorites are unique per `(user_id, product_id)`.
-- Reviews support 1–5 ratings and moderation states.
-- Product discounts use `product_variants.compare_at_price` as the original price and `product_variants.price` as the current sale price.
+- Inventory uses `reserved_quantity`.
+- Orders retain historical product/price/shipping snapshots.
+- Favorites are unique per user/product.
+- Reviews are moderated and limited to eligible purchases.
+- Sale pricing uses variant `price` and `compare_at_price`.
 
 ## Authentication / Authorization
 - HTTP-only `ecom_session` cookie.
-- Session records stored server-side.
+- Server-side sessions.
 - scrypt password hashing.
 - RBAC: CUSTOMER, ADMIN, SUPER_ADMIN.
-- Customer resources are scoped by authenticated user ID.
-- Sensitive mutations enforce authorization server-side.
-- Logout now revokes the current server-side session before clearing the cookie.
-- Password changes revoke all existing sessions for the user.
-
-## Verified APIs
-### Authentication
-`POST /api/auth/register`
-`POST /api/auth/login`
-`POST /api/auth/logout`
-`GET /api/auth/me`
-`POST /api/auth/password`
-
-### Catalog
-`GET /api/products`
-`GET /api/products/[slug]`
-`GET /api/categories`
-`GET /api/categories/[slug]`
-`GET /api/brands`
-`GET /api/brands/[slug]`
-
-Product discovery supports search, category, brand, pagination, sorting, minimum price, maximum price and in-stock filtering. Storefront listing requests are now uncached so recently changed prices/discounts appear immediately. Active variant discount information is exposed for storefront presentation.
-
-### Favorites
-`GET /api/favorites`
-`GET /api/favorites/[productId]`
-`POST /api/favorites/[productId]`
-
-### Reviews
-`GET /api/products/[slug]/reviews`
-`POST /api/products/[slug]/reviews`
-`GET /api/products/[slug]/reviews/eligible`
-
-Customers can rate and review delivered, paid purchases. The server verifies purchase eligibility and prevents duplicate reviews for the same purchased order item. New reviews enter the existing admin moderation queue as `PENDING`.
-
-### Admin Catalog
-`GET /api/admin/catalog/options`
-`POST /api/admin/catalog/brands`
-`POST /api/admin/catalog/categories`
-`POST /api/admin/products/create`
-`PATCH /api/admin/products/[id]`
-`DELETE /api/admin/products/[id]`
-`POST /api/admin/products/[id]/variants`
-`PATCH /api/admin/products/[id]/variants/[variantId]`
-
-The admin has a dedicated `/admin/catalog` CMS page for creating brands and categories, including optional slugs, descriptions, images/logos, category parents and sort order. The product creation UI consumes the same catalog options.
+- Customer ownership is enforced server-side.
+- Logout revokes the current server-side session.
+- Password changes revoke existing sessions.
+- Admin services independently enforce roles.
+- Reconciliation cron requires Bearer authentication using `RECONCILIATION_SECRET` or Vercel `CRON_SECRET`, with timing-safe token comparison.
 
 ## Storefront Completed
-- RTL/light-first global shell
+- Light-first RTL global shell
 - Responsive header/footer/navigation
 - Homepage
-- Product discovery
-- Search
-- URL-preserved filters
-- Sorting
-- Pagination
-- Category and brand navigation pages
-- Product detail
-- Product variants and inventory-aware availability
-- Product-card favorite action
-- Product detail favorite action
-- Customer review/rating form
-- Review eligibility and moderation flow
-- Visible product discount/original-price presentation
+- Product discovery/search/filter/sort/pagination
+- Category and brand pages
+- Product detail, variants and inventory availability
+- Favorites/wishlist
+- Reviews and moderation flow
+- Discount/original-price presentation
 - Cart
 - Customer addresses
 - Province-aware shipping
-- Checkout UI and transactional order creation
-- Customer order detail/payment-unavailable state
-- Favorites API and `/favorites` page
+- Transactional checkout/order creation
+- Customer order/payment-unavailable state
 
-## Recent UI/UX Work Verified
-- Storefront visual direction is light-first with neutral surfaces and restrained rose branding.
-- Homepage composition and product-card hierarchy were previously redesigned.
-- Product discovery and filters were recently redesigned.
-- Mobile storefront navigation exposes account/login access directly on small screens and keeps search/cart actions compact.
-- Homepage category discovery uses the real `categories.image_url` when present instead of always rendering a generated initial tile.
-- Product gallery thumbnails now use restrained square image surfaces instead of rounded mini-cards.
-- The existing design intentionally avoids excessive rounded cards, dark surfaces and generic dashboard-style decoration.
+Canonical wishlist: `/account/wishlist`; `/favorites` remains a compatibility redirect.
 
 ## Admin Completed
-- Product list/edit/delete/create flows
-- Product image management
-- Product variant/SKU management
-- Brand/category assignment during product creation and editing
-- Dedicated brand/category creation CMS
-- Product variant price and compare-at-price discount controls
-- Review moderation queue
-- Live active-product metric on dashboard
-- Inventory and order management
+- Product CRUD
+- Product image management and URL validation
+- Product variants/SKUs
+- Brand/category assignment
+- Brand/category CMS
+- Discount controls
+- Review moderation
+- Inventory management
+- Order management
+- Dashboard metrics
 
-## Current Storefront Gaps
-- Product detail can be enriched further with richer specifications, delivery information and related products.
-- Mobile navigation/search UX has received a first refinement but still needs broader page-by-page responsive verification.
-- Loading/error/empty-state polish and accessibility need a final pass.
-- Image optimization warnings should be reviewed and migrated to `next/image` where practical without breaking arbitrary external image URLs.
-- Product detail still contains a few legacy rounded surface patterns that should be reduced during the next visual pass.
+## Production Hardening Verified
+- Secure HTTP-only sessions and logout revocation
+- Server-side RBAC
+- Transactional checkout
+- Atomic inventory reservation/release
+- Centralized API responses/errors
+- Global security headers
+- Vercel reservation-reconciliation cron every 5 minutes
+- Hardened reconciliation authentication
+- Payment-disabled mode without fake payment success
+- Admin image URL protocol validation
+- No obvious TODO/FIXME/debugger/console-log leftovers found in cleanup scan
 
-## Production Hardening Remaining
-- Run a fresh local lint/build from the latest `main` checkout and address any newly surfaced errors.
-- Automated tests
-- Full end-to-end checkout and review tests
-- Payment gateway adapter + callback verification when credentials/provider are supplied
-- Reservation expiry/release background lifecycle verification
-- Security audit/rate limiting/CSRF review where applicable
-- Performance/SEO audit
-- Production deployment verification
+## Remaining Release-Candidate Work
+1. Run fresh `npm run lint` and `npm run build` from latest `main` checkout.
+2. Automated tests / end-to-end checkout and review tests.
+3. Verify deployed reservation reconciliation lifecycle.
+4. Final rate-limiting/CSRF/security review where applicable.
+5. Performance/SEO audit.
+6. Production deployment verification.
+7. Final page-by-page mobile/RTL/loading/error/empty-state QA.
+8. Payment gateway adapter/callback verification once a real provider is supplied.
 
 ## Development Rules
-1. Inspect existing code before creating new architecture.
-2. Prefer canonical existing services/repositories over duplicates.
+1. Inspect existing code before creating architecture.
+2. Prefer canonical services/repositories over duplicates.
 3. Never fake payment success.
-4. Keep customer data ownership enforced server-side.
-5. Keep prices/inventory/order totals authoritative on the server.
-6. Update this ledger after every major architectural or feature milestone.
-7. The repository and this ledger are the continuity source of truth for future sessions.
+4. Keep customer ownership server-side.
+5. Keep prices/inventory/order totals server-authoritative.
+6. Update this ledger after major milestones.
+7. This repository and ledger are the continuity source of truth.
