@@ -16,7 +16,13 @@ export default defineConfig({
     video: 'retain-on-failure',
   },
   projects: [
-    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+    {
+      name: 'chromium',
+      use: {
+        ...devices['Desktop Chrome'],
+        channel: 'msedge',
+      },
+    },
   ],
   webServer: process.env.E2E_BASE_URL
     ? undefined
