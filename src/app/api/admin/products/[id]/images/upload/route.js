@@ -1,6 +1,3 @@
-import { mkdir, writeFile } from 'node:fs/promises';
-import path from 'node:path';
-import { randomUUID } from 'node:crypto';
 import { addProductImage } from '../../../../../../../server/admin/images.js';
 import { apiErrorResponse, apiSuccess } from '../../../../../../../server/api/response.js';
 
@@ -23,14 +20,14 @@ export async function POST(request, { params }) {
     const productId = Number(id);
     if (!Number.isInteger(productId) || productId <= 0) throw new Error('شناسه محصول نامعتبر است.');
 
-    const filename = `${randomUUID()}${EXTENSIONS.get(file.type)}`;
-    const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'products');
-    await mkdir(uploadDir, { recursive: true });
-    await writeFile(path.join(uploadDir, filename), Buffer.from(await file.arrayBuffer()));
+    // Demo/Vercel mode: never write uploaded files to the ephemeral filesystem.
+    // The selected file is validated for a realistic admin experience, but a
+    // deterministic local SVG is used as the persisted image URL instead.
+    const imageUrl = `${new URL(request.url).origin}/api/demo-image/product/${productId}`;
 
     const image = await addProductImage({
       productId,
-      url: `/uploads/products/${filename}`,
+      url: imageUrl,
       altText: formData.get('altText') || null,
       sortOrder: Number(formData.get('sortOrder')) || 0,
       isPrimary: formData.get('isPrimary') === 'true',
