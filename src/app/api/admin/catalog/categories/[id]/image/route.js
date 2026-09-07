@@ -1,6 +1,3 @@
-import { mkdir, writeFile } from 'node:fs/promises';
-import path from 'node:path';
-import { randomUUID } from 'node:crypto';
 import { updateAdminCategoryImage } from '../../../../../../../server/admin/catalog.js';
 import { apiErrorResponse, apiSuccess } from '../../../../../../../server/api/response.js';
 
@@ -19,11 +16,10 @@ export async function POST(request, { params }) {
     if (file.size > MAX_SIZE) throw new Error('حداکثر حجم تصویر ۵ مگابایت است.');
     const categoryId = Number(id);
     if (!Number.isSafeInteger(categoryId) || categoryId < 1) throw new Error('شناسه دسته‌بندی نامعتبر است.');
-    const filename = `${randomUUID()}${EXTENSIONS.get(file.type)}`;
-    const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'catalog', 'categories');
-    await mkdir(uploadDir, { recursive: true });
-    await writeFile(path.join(uploadDir, filename), Buffer.from(await file.arrayBuffer()));
-    const imageUrl = `/uploads/catalog/categories/${filename}`;
+
+    // Demo/Vercel mode: never write uploaded files to the ephemeral filesystem.
+    const imageUrl = `${new URL(request.url).origin}/api/demo-image/category/${categoryId}`;
+
     const category = await updateAdminCategoryImage(categoryId, imageUrl);
     return apiSuccess({ category }, { status: 201 });
   } catch (error) {
