@@ -26,7 +26,7 @@ export async function POST(request, { params }) {
     }
 
     // Instead of writing to disk, generate a deterministic SVG mock URL
-    const imageUrl = `${request.nextUrl.origin}/api/demo-image/category/${categoryId}`;
+    const imageUrl = `/api/demo-image/category/${categoryId}`;
     const category = await updateAdminCategoryImage(categoryId, imageUrl);
     return apiSuccess({ category }, 201);
   } catch (error) {

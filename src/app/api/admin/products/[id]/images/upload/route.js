@@ -32,7 +32,7 @@ export async function POST(request, { params }) {
     const uuid = randomUUID();
     const image = await addProductImage({
       productId,
-      url: `${request.nextUrl.origin}/api/demo-image/product/${productId}?uuid=${uuid}`,
+      url: `/api/demo-image/product/${productId}?uuid=${uuid}`,
       altText: formData.get('altText') || null,
       sortOrder: Number(formData.get('sortOrder')) || 0,
       isPrimary: formData.get('isPrimary') === 'true',
