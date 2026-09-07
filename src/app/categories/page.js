@@ -37,7 +37,7 @@ function CategoryCard({ category, childrenByParent }) {
   return <article className="group/card relative min-w-0">
     <Link href={`/products?category=${encodeURIComponent(category.slug)}`} className="group block bg-white">
       <div className="relative aspect-[1.15] overflow-hidden bg-[#f5f5f2]">
-        {category.image_url ? <Image src={category.image_url} alt={category.name} fill sizes="(max-width:640px) 48vw, (max-width:1024px) 32vw, 20vw" className="object-cover transition duration-500 group-hover:scale-[1.04]"/> : <div className="grid h-full place-items-center text-3xl font-black text-slate-200">{category.name?.slice(0,1)}</div>}
+        {category.image_url ? <Image src={category.image_url} alt={category.name} fill sizes="(max-width:640px) 48vw, (max-width:1024px) 32vw, 20vw" unoptimized className="object-cover transition duration-500 group-hover:scale-[1.04]"/> : <div className="grid h-full place-items-center text-3xl font-black text-slate-200">{category.name?.slice(0,1)}</div>}
         {children.length > 0 && <div className="absolute bottom-3 left-3 grid h-9 w-9 place-items-center border border-white/80 bg-white/90 text-slate-500 shadow-[0_6px_18px_rgba(15,23,42,0.12)] backdrop-blur transition-all duration-200 group-hover:scale-105 group-hover:border-white group-hover:bg-white group-hover:text-[var(--brand)]" aria-hidden="true"><span className="relative -top-px text-sm font-black">⌄</span></div>}
       </div>
       <div className="flex items-start justify-between gap-3 border-b border-[var(--border)] py-4">

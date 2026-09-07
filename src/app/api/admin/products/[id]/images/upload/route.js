@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { addProductImage } from '../../../../../../../server/admin/images.js';
-import { apiSuccess } from '../../../../../../../server/api/response.js';
+import { apiErrorResponse, apiSuccess } from '../../../../../../../server/api/response.js';
 
 export const runtime = 'nodejs';
 
@@ -38,9 +38,9 @@ export async function POST(request, { params }) {
       isPrimary: formData.get('isPrimary') === 'true',
     });
 
-    return apiSuccess({ image }, 201);
+    return apiSuccess({ image }, { status: 201 });
   } catch (error) {
     console.error('Upload Error:', error);
-    return Response.json({ success: false, message: 'Unable to upload product image.' }, { status: 500 });
+    return apiErrorResponse(error, 'Unable to upload product image.');
   }
 }

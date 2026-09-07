@@ -1,5 +1,5 @@
 import { updateAdminBrandLogo } from '../../../../../../../server/admin/catalog.js';
-import { apiSuccess } from '../../../../../../../server/api/response.js';
+import { apiErrorResponse, apiSuccess } from '../../../../../../../server/api/response.js';
 
 export const runtime = 'nodejs';
 
@@ -28,9 +28,9 @@ export async function POST(request, { params }) {
     // Instead of writing to disk, generate a deterministic SVG mock URL
     const logoUrl = `/api/demo-image/brand/${brandId}`;
     const brand = await updateAdminBrandLogo(brandId, logoUrl);
-    return apiSuccess({ brand }, 201);
+    return apiSuccess({ brand }, { status: 201 });
   } catch (error) {
     console.error('Upload Error:', error);
-    return Response.json({ success: false, message: 'Unable to upload brand image.' }, { status: 500 });
+    return apiErrorResponse(error, 'Unable to upload brand image.');
   }
 }

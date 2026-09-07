@@ -1,5 +1,5 @@
 import { updateAdminCategoryImage } from '../../../../../../../server/admin/catalog.js';
-import { apiSuccess } from '../../../../../../../server/api/response.js';
+import { apiErrorResponse, apiSuccess } from '../../../../../../../server/api/response.js';
 
 export const runtime = 'nodejs';
 
@@ -28,9 +28,9 @@ export async function POST(request, { params }) {
     // Instead of writing to disk, generate a deterministic SVG mock URL
     const imageUrl = `/api/demo-image/category/${categoryId}`;
     const category = await updateAdminCategoryImage(categoryId, imageUrl);
-    return apiSuccess({ category }, 201);
+    return apiSuccess({ category }, { status: 201 });
   } catch (error) {
     console.error('Upload Error:', error);
-    return Response.json({ success: false, message: 'Unable to upload category image.' }, { status: 500 });
+    return apiErrorResponse(error, 'Unable to upload category image.');
   }
 }
