@@ -1,6 +1,3 @@
-import { mkdir, writeFile } from 'node:fs/promises';
-import path from 'node:path';
-import { randomUUID } from 'node:crypto';
 import { updateAdminBrandLogo } from '../../../../../../../server/admin/catalog.js';
 import { apiErrorResponse, apiSuccess } from '../../../../../../../server/api/response.js';
 
@@ -14,19 +11,26 @@ export async function POST(request, { params }) {
     const { id } = await params;
     const formData = await request.formData();
     const file = formData.get('file');
-    if (!(file instanceof File)) throw new Error('فایل تصویر ارسال نشده است.');
-    if (!EXTENSIONS.has(file.type)) throw new Error('فرمت تصویر مجاز نیست. از JPG، PNG، WEBP یا GIF استفاده کنید.');
-    if (file.size > MAX_SIZE) throw new Error('حداکثر حجم تصویر ۵ مگابایت است.');
+    if (!(file instanceof File)) {
+      return Response.json({ success: false, message: 'فایل تصویر ارسال نشده است.' }, { status: 400 });
+    }
+    if (!EXTENSIONS.has(file.type)) {
+      return Response.json({ success: false, message: 'فرمت تصویر مجاز نیست. از JPG، PNG، WEBP یا GIF استفاده کنید.' }, { status: 400 });
+    }
+    if (file.size > MAX_SIZE) {
+      return Response.json({ success: false, message: 'حداکثر حجم تصویر ۵ مگابایت است.' }, { status: 400 });
+    }
     const brandId = Number(id);
-    if (!Number.isSafeInteger(brandId) || brandId < 1) throw new Error('شناسه برند نامعتبر است.');
-    const filename = `${randomUUID()}${EXTENSIONS.get(file.type)}`;
-    const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'catalog', 'brands');
-    await mkdir(uploadDir, { recursive: true });
-    await writeFile(path.join(uploadDir, filename), Buffer.from(await file.arrayBuffer()));
-    const logoUrl = `/uploads/catalog/brands/${filename}`;
+    if (!Number.isSafeInteger(brandId) || brandId < 1) {
+      return Response.json({ success: false, message: 'شناسه برند نامعتبر است.' }, { status: 400 });
+    }
+
+    // Instead of writing to disk, generate a deterministic SVG mock URL
+    const logoUrl = `/api/demo-image/brand/${brandId}`;
     const brand = await updateAdminBrandLogo(brandId, logoUrl);
     return apiSuccess({ brand }, { status: 201 });
   } catch (error) {
+    console.error('Upload Error:', error);
     return apiErrorResponse(error, 'Unable to upload brand image.');
   }
 }
