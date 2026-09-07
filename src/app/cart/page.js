@@ -11,7 +11,7 @@ export default async function CartPage() {
     const user = await requireUser();
     cart = await getCart(user.id);
   } catch (error) {
-    if (error?.code === 'UNAUTHORIZED') {
+    if (error?.code === 'UNAUTHORIZED' || error?.code === 'UNAUTHENTICATED') {
       return <div className="mx-auto max-w-2xl px-4 py-24 text-center"><h1 className="text-2xl font-black">برای مشاهده سبد خرید وارد شوید</h1><p className="mt-2 text-sm text-slate-500">سبد خرید به حساب کاربری شما متصل است.</p><Link href="/login?returnTo=/cart" className="mt-6 inline-flex rounded-xl bg-slate-950 px-5 py-3 text-sm font-bold text-white">ورود به حساب</Link></div>;
     }
     throw error;

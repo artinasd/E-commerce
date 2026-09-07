@@ -31,3 +31,6 @@ coverage/
 
 # Local database / generated files
 database/.local/
+playwright-report/
+test-results/
+server.log
